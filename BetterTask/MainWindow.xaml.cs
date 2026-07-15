@@ -35,6 +35,7 @@ namespace BetterTask
 
 
                 RecordButton.Content = "Recording";
+                StatusTextBlock.Text = "Recording...";
                 recorder.Subscribe();
                 recorder.clearRecording();
                 isRecording = true;
@@ -45,6 +46,7 @@ namespace BetterTask
 
                 isRecording = false;
                 RecordButton.Content = "Record";
+                StatusTextBlock.Text = "Recording stopped.";
                 recorder.Unsubscribe();
             }
         }
