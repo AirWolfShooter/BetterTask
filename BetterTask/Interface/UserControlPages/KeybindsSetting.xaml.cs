@@ -34,6 +34,8 @@ namespace BetterTask.Interface.UserControlPages
             LoadKeybindButtons();
         }
 
+        public static bool pickingKeybind;
+
         private TaskCompletionSource<KeyCode?>? keyWaiter;
 
         public enum KeybindType
@@ -90,6 +92,10 @@ namespace BetterTask.Interface.UserControlPages
                     {
                         button.Content = key.ToString().Replace("Vc", "");
                     }
+                    else
+                    {
+                        button.Content = "None";
+                    }
                 }
             }
         }
@@ -113,23 +119,72 @@ namespace BetterTask.Interface.UserControlPages
             KeybindType keybindType = Enum.Parse<KeybindType>(button.Tag!.ToString()!);
 
             button.Content = "Press a key...";
+            pickingKeybind = true;
 
             KeyCode? key = await GetKey();
 
-            if (!key.HasValue || KeybindsManager.Instance.Hotkeys.ContainsValue(key.Value))
+            if (!key.HasValue)
+            {
+                pickingKeybind = false;
                 return;
+            }
+
+            if (key.Value == KeyCode.VcEscape)
+            {
+                if (KeybindsManager.Instance.Hotkeys.TryGetValue(keybindType, out KeyCode currentKey))
+                    button.Content = currentKey.ToString().Replace("Vc", "");
+                else
+                {
+                    button.Content = "None";
+                    pickingKeybind = false;
+                    return;
+                }
+            }
+
+            if (key.Value == KeyCode.VcSlash || key.Value == KeyCode.VcBackslash)
+            {
+                KeybindsManager.Instance.Hotkeys.Remove(keybindType);
+                SettingsManager.Instance.settings.Hotkeys = KeybindsManager.Instance.Hotkeys;
+
+                LoadKeybindButtons();
+
+                pickingKeybind = false;
+
+                if (SettingsManager.Instance.settings.SaveAutomatically ?? false)
+                {
+                    SettingsManager.Instance.saveSettings();
+                }
+
+                return;
+            }
+
+            KeybindType? previousAction = null;
+
+            foreach (var pair in KeybindsManager.Instance.Hotkeys)
+            {
+                if (pair.Key != keybindType && pair.Value == key.Value)
+                {
+                    previousAction = pair.Key;
+                    break;
+                }
+            }
+
+            if (previousAction.HasValue)
+            {
+                KeybindsManager.Instance.Hotkeys.Remove(previousAction.Value);
+            }
 
             KeybindsManager.Instance.Hotkeys[keybindType] = key.Value;
             SettingsManager.Instance.settings.Hotkeys = KeybindsManager.Instance.Hotkeys;
+
             if (SettingsManager.Instance.settings.SaveAutomatically ?? false)
             {
                 SettingsManager.Instance.saveSettings();
             }
 
-            await Dispatcher.InvokeAsync(() =>
-            {
-                button.Content = key.Value.ToString().Replace("Vc", "");
-            });
+            LoadKeybindButtons();
+
+            pickingKeybind = false;
 
             System.Diagnostics.Debug.WriteLine($"Set {keybindType} to {key.Value}");
         }

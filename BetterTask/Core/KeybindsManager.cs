@@ -33,6 +33,7 @@ namespace BetterTask.Core
             loadKeybinds();
             Actions[KeybindType.Recording] = () =>
             {
+                MainWindow.loop = false;
                 MainWindow.Instance.recordingClicked(null, null);
             };
             Actions[KeybindType.Playback] = () =>
@@ -42,7 +43,11 @@ namespace BetterTask.Core
             Actions[KeybindType.PausePlayback] = playback.pausePlayback;
             Actions[KeybindType.StopPlayback] = playback.stopPlayback;
             Actions[KeybindType.ResumePlayback] = playback.resumePlayback;
-            Actions[KeybindType.LoopPlayback] = async () => await playback.loopPlayback();
+            Actions[KeybindType.LoopPlayback] = () =>
+            {
+                MainWindow.loop = true;
+                MainWindow.Instance.playbackClicked(null, null);
+            };
 
             GlobalHookManager.Instance.KeyPressed += OnKeyPress;
         }
@@ -62,7 +67,7 @@ namespace BetterTask.Core
         {
             foreach (var hotkey in Hotkeys.ToList())
             {
-                if (hotkey.Value == e.Data.KeyCode)
+                if (!KeybindsSetting.pickingKeybind && hotkey.Value == e.Data.KeyCode)
                 {
                     if (Actions.TryGetValue(hotkey.Key, out Action? action))
                     {

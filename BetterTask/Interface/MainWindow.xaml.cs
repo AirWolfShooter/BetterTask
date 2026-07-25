@@ -28,6 +28,7 @@ namespace BetterTask.Interface
         private Playback playback = Playback.Instance;
         private SaveAndLoadEvents saveAndLoad = SaveAndLoadEvents.Instance;
         private Stopwatch displayTimer = new Stopwatch();
+        public static bool loop;
 
         public MainWindow()
         {
@@ -79,6 +80,11 @@ namespace BetterTask.Interface
         {
             if (Recording.RecordedEvents.Count > 0 && !Recording.isRecording)
             {
+                if (sender is Button button)
+                {
+                    loop = false;
+                }
+
                 StatusTextBlock.Text = "Playing Back Recording...";
                 PlayBackButton.Content = "Playing";
                 ButtonStackPanel.IsEnabled = false;
@@ -90,7 +96,7 @@ namespace BetterTask.Interface
                 CompositionTarget.Rendering += UpdateTimer;
                 displayTimer.Restart();
 
-                await playback.StartPlayback();
+                await playback.StartPlayback(loop);
 
                 StatusTextBlock.Text = "Playback finished.";
                 CompositionTarget.Rendering -= UpdateTimer;

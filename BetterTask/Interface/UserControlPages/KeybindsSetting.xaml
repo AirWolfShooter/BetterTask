@@ -17,7 +17,7 @@
                    HorizontalAlignment="Center"
                    Margin="0,20,0,20"/>
 
-        <Grid>
+        <Grid x:Name="keybindsGrid">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -110,6 +110,9 @@
             </StackPanel>
 
         </Grid>
+
+        <TextBlock Text="Press / or \ When Picking to Remove Option" Foreground="White" FontFamily="Segoe UI" FontWeight="Medium" HorizontalAlignment="Center" Margin="0,10,0,5"/>
+        <TextBlock Text="Press Esc When Picking to Cancel Option" Foreground="White" FontFamily="Segoe UI" FontWeight="Medium" HorizontalAlignment="Center"/>
 
     </StackPanel>
 

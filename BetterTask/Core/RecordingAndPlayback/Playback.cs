@@ -39,18 +39,23 @@ namespace BetterTask.Core.RecordingAndPlayback
             playbackStopped = true;
         }
 
-        public Task StartPlayback()
+        public Task StartPlayback(bool loop = false)
         {
-            if (playbackStarted) return Task.CompletedTask;
+            if (playbackStarted)
+                return Task.CompletedTask;
+            playbackStopped = false;
 
-            return Task.Run(() => Play(Recording.RecordedEvents));
-        }
-        public async Task loopPlayback()
-        {
-            while (!playbackStopped)
+            return Task.Run(() =>
             {
-                MainWindow.Instance.playbackClicked(null,null);
-            }
+                do
+                {
+                    Play(Recording.RecordedEvents);
+                }
+                while (loop && !playbackStopped);
+                playbackStarted = false;
+                playbackPaused = false;
+            });
+            
         }
 
         public void Play(List<RecordedEvent> events)
@@ -77,10 +82,6 @@ namespace BetterTask.Core.RecordingAndPlayback
                 }
                 ExecuteEvent(recordedEvent);
             }
-
-            playbackStarted = false;
-            playbackStopped = false;
-            playbackPaused = false;
         }
 
 
