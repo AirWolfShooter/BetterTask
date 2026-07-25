@@ -1,0 +1,43 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="RoundedCheckBox" TargetType="CheckBox">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal">
+                        <!-- The Custom Rounded Box -->
+                        <Border Width="20" Height="20" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="5">
+                            <!-- Increase to 10 for a circle -->
+
+                            <!-- The Checkmark Indicator -->
+                            <Grid>
+                                <Path x:Name="CheckMark" 
+                                  Data="M 3,7 L 7,11 L 13,3" 
+                                  Stroke="Black" 
+                                  StrokeThickness="2" 
+                                  Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- The Content/Label -->
+                        <ContentPresenter Margin="5,0,0,0" VerticalAlignment="Center"/>
+                        
+                    </StackPanel>
+
+                    <!-- Trigger to show the checkmark when clicked -->
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+    </Style>
+</ResourceDictionary>
