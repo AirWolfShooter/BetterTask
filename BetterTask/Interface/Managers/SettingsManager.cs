@@ -9,7 +9,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 
-namespace BetterTask.Core
+namespace BetterTask.Interface.Managers
 {
     internal class SettingsManager
     {

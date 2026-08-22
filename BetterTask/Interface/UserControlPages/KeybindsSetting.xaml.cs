@@ -1,5 +1,6 @@
 ﻿using BetterTask.Core;
 using BetterTask.Core.RecordingAndPlayback;
+using BetterTask.Interface.Managers;
 using SharpHook;
 using SharpHook.Data;
 using System;
@@ -48,25 +49,25 @@ namespace BetterTask.Interface.UserControlPages
             LoopPlayback
         }
 
-        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject obj)
-        where T : DependencyObject
-        {
-            if (obj == null)
-                yield break;
+        //private static IEnumerable<T> FindVisualChildren<T>(DependencyObject obj)
+        //where T : DependencyObject
+        //{
+        //    if (obj == null)
+        //        yield break;
 
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
-            {
-                DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+        //    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+        //    {
+        //        DependencyObject child = VisualTreeHelper.GetChild(obj, i);
 
-                if (child is T t)
-                    yield return t;
+        //        if (child is T t)
+        //            yield return t;
 
-                foreach (T childOfChild in FindVisualChildren<T>(child))
-                {
-                    yield return childOfChild;
-                }
-            }
-        }
+        //        foreach (T childOfChild in FindVisualChildren<T>(child))
+        //        {
+        //            yield return childOfChild;
+        //        }
+        //    }
+        //}
 
         public static Dictionary<KeybindType, KeyCode> actions = new();
 
@@ -79,22 +80,46 @@ namespace BetterTask.Interface.UserControlPages
             return keyWaiter.Task;
         }
 
+        private void LoadKeybinds(Button button)
+        {
+            if (button.Tag == null) 
+            {
+                button.Content = "None";
+                return;
+            }
+
+            if (Enum.TryParse(button.Tag.ToString(), out KeybindType keybindType)) {
+                if (KeybindsManager.Instance.Hotkeys.TryGetValue(keybindType, out KeyCode key))
+                {
+                    button.Content = key.ToString().Replace("Vc", "");
+                }
+                else
+                {
+                    button.Content = "None";
+                }
+            }
+        }
+
         private void LoadKeybindButtons()
         {
-            foreach (Button button in FindVisualChildren<Button>(this))
+            foreach (var child in keybindsGrid.Children)
             {
-                if (button.Tag == null)
-                    continue;
-
-                if (Enum.TryParse(button.Tag.ToString(), out KeybindType keybindType))
+                if (child is not Button)
                 {
-                    if (KeybindsManager.Instance.Hotkeys.TryGetValue(keybindType, out KeyCode key))
+                    try
                     {
-                        button.Content = key.ToString().Replace("Vc", "");
+                        foreach (var desendent in LogicalTreeHelper.GetChildren((DependencyObject)child))
+                        {
+                            if (desendent is Button button)
+                            {
+                                LoadKeybinds(button);
+                                System.Diagnostics.Debug.WriteLine($"Loaded keybind for button with tag {button.Tag}");
+                            }
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        button.Content = "None";
+                        System.Diagnostics.Debug.WriteLine(ex);
                     }
                 }
             }

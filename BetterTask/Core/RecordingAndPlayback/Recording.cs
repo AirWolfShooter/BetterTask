@@ -1,11 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using SharpHook;
-using System.Diagnostics;
-using SharpHook.Providers;
-using SharpHook.Data;
-using BetterTask.Core.RecordingAndPlayback;
+﻿using BetterTask.Interface;
+using BetterTask.Interface.Managers;
 using BetterTask.Interface.UserControlPages;
+using BetterTask.Interface.Utils;
+using SharpHook;
+using SharpHook.Data;
+using SharpHook.Providers;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Windows.Media;
 
 namespace BetterTask.Core.RecordingAndPlayback
 {
@@ -38,6 +41,9 @@ namespace BetterTask.Core.RecordingAndPlayback
             GlobalHookManager.Instance.MouseWheel += onMouseWheel;
             GlobalHookManager.Instance.KeyPressed += onKeyDown;
             GlobalHookManager.Instance.KeyReleased += onKeyUp;
+
+            CompositionTarget.Rendering += MainWindow.Instance.UpdateTimer;
+            MainWindow.Instance.resetTimer();
 
             timer.Restart();
 
@@ -139,6 +145,8 @@ namespace BetterTask.Core.RecordingAndPlayback
         public void onKeyUp(object? sender, KeyboardHookEventArgs e)
         {
             pressedKeys.Remove(e.Data.KeyCode);
+            if (KeybindsManager.Instance.Hotkeys.ContainsValue(e.Data.KeyCode))
+    return;
 
             AddEvent(new RecordedEvent
             {
@@ -158,6 +166,9 @@ namespace BetterTask.Core.RecordingAndPlayback
 
             GlobalHookManager.Instance.KeyPressed -= onKeyDown;
             GlobalHookManager.Instance.KeyReleased -= onKeyUp;
+
+            CompositionTarget.Rendering -= MainWindow.Instance.UpdateTimer;
+            MainWindow.displayTimer.Stop();
 
             pressedKeys.Clear();
 

@@ -14,6 +14,7 @@ using System.Windows.Media.Converters;
 using BetterTask.Interface.UserControlPages;
 using System.Windows.Threading;
 using System.Diagnostics;
+using BetterTask.Interface.Managers;
 
 namespace BetterTask.Interface
 {
@@ -27,7 +28,7 @@ namespace BetterTask.Interface
         private Recording recorder = Recording.Instance;
         private Playback playback = Playback.Instance;
         private SaveAndLoadEvents saveAndLoad = SaveAndLoadEvents.Instance;
-        private Stopwatch displayTimer = new Stopwatch();
+        public static Stopwatch displayTimer = new Stopwatch();
         public static bool loop;
 
         public MainWindow()
@@ -48,6 +49,12 @@ namespace BetterTask.Interface
             Timer.Text = $"{time.Minutes:D2}:{time.Seconds:D2}";
         }
 
+        public void resetTimer()
+        {
+            displayTimer.Restart();
+            Timer.Text = "00:00";
+        }
+
         public void recordingClicked(object? sender, RoutedEventArgs? e)
         {
             if (!Recording.isRecording)
@@ -61,16 +68,12 @@ namespace BetterTask.Interface
                 RecordButton.Content = "Recording";
                 StatusTextBlock.Text = "Recording...";
                 recorder.clearRecording();
-                CompositionTarget.Rendering += UpdateTimer;
-                displayTimer.Start();
                 recorder.Subscribe();
                 
             }
             else
             {
                 RecordButton.ClearValue(Button.BackgroundProperty);
-                CompositionTarget.Rendering -= UpdateTimer;
-                displayTimer.Stop();
                 RecordButton.Content = "Record";
                 StatusTextBlock.Text = "Recording stopped.";
                 recorder.Unsubscribe();
@@ -78,6 +81,16 @@ namespace BetterTask.Interface
         }
         public async void playbackClicked(object? sender, RoutedEventArgs? e)
         {
+            if (Playback.playbackStarted)
+            {
+                playback.stopPlayback();
+                StatusTextBlock.Text = "Playback stopped.";
+                PlayBackButton.ClearValue(Button.BackgroundProperty);
+                PlayBackButton.Content = "Play";
+                ButtonStackPanel.IsEnabled = true;
+                return;
+            }
+
             if (Recording.RecordedEvents.Count > 0 && !Recording.isRecording)
             {
                 if (sender is Button button)
@@ -93,15 +106,9 @@ namespace BetterTask.Interface
                     (Color)ColorConverter.ConvertFromString("#0250a3"),
                     45);
 
-                CompositionTarget.Rendering += UpdateTimer;
-                displayTimer.Restart();
-
                 await playback.StartPlayback(loop);
 
                 StatusTextBlock.Text = "Playback finished.";
-                CompositionTarget.Rendering -= UpdateTimer;
-                displayTimer.Stop();
-                Timer.Text = "00:00";
                 PlayBackButton.ClearValue(Button.BackgroundProperty);
                 PlayBackButton.Content = "Play";
                 ButtonStackPanel.IsEnabled = true;

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BetterTask.Core.RecordingAndPlayback
+namespace BetterTask.Interface.Utils
 {
     public record RecordedEvent
     {

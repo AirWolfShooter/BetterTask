@@ -11,19 +11,17 @@ using System.Windows;
 using System.Windows.Media;
 
 using static BetterTask.Interface.UserControlPages.KeybindsSetting;
+using BetterTask.Core;
 
-namespace BetterTask.Core
+namespace BetterTask.Interface.Managers
 {
     public class KeybindsManager
     {
-        private static readonly Lazy<KeybindsManager> _instance =
-            new(() => new KeybindsManager());
-
-        public static KeybindsManager Instance => _instance.Value;
+        private static readonly KeybindsManager instance = new KeybindsManager();
+        public static KeybindsManager Instance => instance;
 
         public Dictionary<KeybindType, KeyCode> Hotkeys { get; set; } = new();
 
-        public Recording recording = Recording.Instance;
         public Playback playback = Playback.Instance;
 
         private readonly Dictionary<KeybindType, Action> Actions = new();
@@ -65,21 +63,25 @@ namespace BetterTask.Core
 
         private void OnKeyPress(object? sender, KeyboardHookEventArgs e)
         {
-            foreach (var hotkey in Hotkeys.ToList())
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                if (!KeybindsSetting.pickingKeybind && hotkey.Value == e.Data.KeyCode)
+                if (Application.Current.Windows.OfType<Settings>().Any())
+                    return;
+
+                foreach (var hotkey in Hotkeys.ToList())
                 {
-                    if (Actions.TryGetValue(hotkey.Key, out Action? action))
+                    if (!KeybindsSetting.pickingKeybind &&
+                        hotkey.Value == e.Data.KeyCode)
                     {
-                        Application.Current.Dispatcher.Invoke(() =>
+                        if (Actions.TryGetValue(hotkey.Key, out Action? action))
                         {
                             action();
-                        });
-                    }
+                        }
 
-                    break;
+                        break;
+                    }
                 }
-            }
+            });
         }
     }
 }

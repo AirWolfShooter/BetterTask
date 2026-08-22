@@ -1,9 +1,10 @@
-﻿using BetterTask.Core;
+﻿using BetterTask.Interface.Managers;
 using SharpHook.Data;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,6 +30,7 @@ namespace BetterTask.Interface.UserControlPages
         private const string CurrentVersion = "1.0.0";
         private string repoOwner = "AirWolfShooter";
         private const string repoName = "BetterTask";
+        private Regex numberRegex = new("[^0-9.]");
 
         private GeneralSettings()
         {
@@ -41,6 +43,8 @@ namespace BetterTask.Interface.UserControlPages
             stayOnTop.IsChecked = SettingsManager.Instance.settings.StayOnTop ?? false;
             checkForUpdates.IsChecked = SettingsManager.Instance.settings.CheckForUpdates ?? false;
             saveAutomatically.IsChecked = SettingsManager.Instance.settings.SaveAutomatically ?? false;
+
+            startDelay.Text = SettingsManager.Instance.settings.StartDelay?.ToString() ?? "0";
 
             checkSettings();
         }
@@ -103,6 +107,23 @@ namespace BetterTask.Interface.UserControlPages
         public async Task checkForUpdatesAsync()
         {
             // Ill work on this later
+        }
+
+        private void TextBlock_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = numberRegex.IsMatch(e.Text);
+        }
+
+        private void startDelay_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (int.TryParse(startDelay.Text, out int delay))
+            {
+                SettingsManager.Instance.settings.StartDelay = delay;
+                if (SettingsManager.Instance.settings.SaveAutomatically ?? false)
+                {
+                    SettingsManager.Instance.saveSettings();
+                }
+            }
         }
     }
 }

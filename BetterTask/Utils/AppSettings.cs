@@ -12,5 +12,7 @@ namespace BetterTask.Utils
         public bool? CheckForUpdates { get; set; }
         public bool? SaveAutomatically { get; set; }
         public Dictionary<KeybindType, KeyCode>? Hotkeys { get; set; }
+
+        public int? StartDelay { get; set; }
     }
 }

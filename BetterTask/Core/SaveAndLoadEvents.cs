@@ -1,4 +1,5 @@
 ﻿using BetterTask.Core.RecordingAndPlayback;
+using BetterTask.Interface.Utils;
 using Microsoft.Win32;
 using System;
 using System.IO;
