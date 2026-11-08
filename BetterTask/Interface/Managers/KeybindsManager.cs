@@ -1,87 +1,81 @@
-﻿using BetterTask.Core.RecordingAndPlayback;
+﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
+using BetterTask.Core;
+using BetterTask.Core.RecordingAndPlayback;
 using BetterTask.Interface;
 using BetterTask.Interface.UserControlPages;
+using BetterTask.Utils;
 using SharpHook;
 using SharpHook.Data;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows.Input;
-using System.Windows;
-using System.Windows.Media;
-
 using static BetterTask.Interface.UserControlPages.KeybindsSetting;
-using BetterTask.Core;
 
-namespace BetterTask.Interface.Managers
+namespace BetterTask.Interface.Managers;
+
+public class KeybindsManager
 {
-    public class KeybindsManager
+    private static readonly KeybindsManager instance = new();
+    public static KeybindsManager Instance => instance;
+
+    public Dictionary<KeybindType, KeyCode> Hotkeys { get; set; } = new();
+    public Playback playback = Playback.Instance;
+    private readonly Dictionary<KeybindType, Action> Actions = new();
+
+    public void startListening()
     {
-        private static readonly KeybindsManager instance = new KeybindsManager();
-        public static KeybindsManager Instance => instance;
-
-        public Dictionary<KeybindType, KeyCode> Hotkeys { get; set; } = new();
-
-        public Playback playback = Playback.Instance;
-
-        private readonly Dictionary<KeybindType, Action> Actions = new();
-
-        public void startListening()
+        loadKeybinds();
+        Actions[KeybindType.Recording] = () =>
         {
-            loadKeybinds();
-            Actions[KeybindType.Recording] = () =>
-            {
-                MainWindow.loop = false;
-                MainWindow.Instance.recordingClicked(null, null);
-            };
-            Actions[KeybindType.Playback] = () =>
-            {
-                MainWindow.Instance.playbackClicked(null, null);
-            };
-            Actions[KeybindType.PausePlayback] = playback.pausePlayback;
-            Actions[KeybindType.StopPlayback] = playback.stopPlayback;
-            Actions[KeybindType.ResumePlayback] = playback.resumePlayback;
-            Actions[KeybindType.LoopPlayback] = () =>
-            {
-                MainWindow.loop = true;
-                MainWindow.Instance.playbackClicked(null, null);
-            };
-
-            GlobalHookManager.Instance.KeyPressed += OnKeyPress;
-        }
-
-        public void loadKeybinds()
+            MainWindow.loop = false;
+            MainWindow.Instance.recordingClicked(null, null);
+        };
+        Actions[KeybindType.AppendRecording] = () =>
+            MainWindow.Instance.appendRecordingClicked(null, null);
+        Actions[KeybindType.Playback] = () => MainWindow.Instance.playbackClicked(null, null);
+        Actions[KeybindType.PausePlayback] = playback.pausePlayback;
+        Actions[KeybindType.StopPlayback] = playback.stopPlayback;
+        Actions[KeybindType.ResumePlayback] = playback.resumePlayback;
+        Actions[KeybindType.LoopPlayback] = () =>
         {
-            Hotkeys = SettingsManager.Instance.settings.Hotkeys ?? new();
-        }
+            MainWindow.loop = true;
+            MainWindow.Instance.playbackClicked(null, null);
+        };
 
-        public void stopListening()
+        GlobalHookManager.Instance.KeyPressed += OnKeyPress;
+    }
+
+    public void loadKeybinds()
+    {
+        Hotkeys = SettingsManager.Instance.settings.Hotkeys ?? new();
+    }
+
+    public void stopListening()
+    {
+        GlobalHookManager.Instance.KeyPressed -= OnKeyPress;
+    }
+
+    private void OnKeyPress(object? sender, KeyboardHookEventArgs e)
+    {
+        Dispatcher.UIThread.Invoke(() =>
         {
-            GlobalHookManager.Instance.KeyPressed -= OnKeyPress;
-        }
-
-
-        private void OnKeyPress(object? sender, KeyboardHookEventArgs e)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+                && desktop.Windows.OfType<Settings>().Any())
             {
-                if (Application.Current.Windows.OfType<Settings>().Any())
-                    return;
+                return;
+            }
 
-                foreach (var hotkey in Hotkeys.ToList())
+            foreach (var hotkey in Hotkeys.ToList())
+            {
+                if (!KeybindsSetting.pickingKeybind && hotkey.Value == e.Data.KeyCode)
                 {
-                    if (!KeybindsSetting.pickingKeybind &&
-                        hotkey.Value == e.Data.KeyCode)
+                    if (Actions.TryGetValue(hotkey.Key, out Action? action))
                     {
-                        if (Actions.TryGetValue(hotkey.Key, out Action? action))
-                        {
-                            action();
-                        }
-
-                        break;
+                        action();
                     }
+
+                    break;
                 }
-            });
-        }
+            }
+        });
     }
 }

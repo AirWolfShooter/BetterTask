@@ -1,16 +1,16 @@
 ﻿using SharpHook;
 using SharpHook.Data;
+using BetterTask.Utils;
 
 namespace BetterTask.Core
 {
     public sealed class GlobalHookManager
     {
-        private static readonly Lazy<GlobalHookManager> _instance =
-            new(() => new GlobalHookManager());
-
-        public static GlobalHookManager Instance => _instance.Value;
+        private static readonly GlobalHookManager instance = new GlobalHookManager();
+        public static GlobalHookManager Instance => instance;
 
         private readonly IGlobalHook hook;
+        private bool isStarted;
 
         private GlobalHookManager()
         {
@@ -28,6 +28,11 @@ namespace BetterTask.Core
 
         public void Start()
         {
+            if (isStarted)
+                return;
+
+            isStarted = true;
+
             hook.KeyPressed += (s, e) => KeyPressed?.Invoke(this, e);
             hook.KeyReleased += (s, e) => KeyReleased?.Invoke(this, e);
 
@@ -37,12 +42,34 @@ namespace BetterTask.Core
             hook.MouseReleased += (s, e) => MouseReleased?.Invoke(this, e);
             hook.MouseWheel += (s, e) => MouseWheel?.Invoke(this, e);
 
-            hook.RunAsync();
+            try
+            {
+                Task hookTask = hook.RunAsync();
+                _ = hookTask.ContinueWith(
+                    task =>
+                    {
+                        isStarted = false;
+                        AppLogger.Error("Input hooks", "The global input hook stopped unexpectedly.", task.Exception);
+                    },
+                    TaskContinuationOptions.OnlyOnFaulted);
+                AppLogger.Info("Input hooks", "Global keyboard and mouse hooks started.");
+            }
+            catch (Exception ex)
+            {
+                isStarted = false;
+                AppLogger.Error("Input hooks", "Could not start global input hooks.", ex);
+                throw;
+            }
         }
 
         public void Stop()
         {
+            if (!isStarted)
+                return;
+
             hook.Dispose();
+            isStarted = false;
+            AppLogger.Info("Input hooks", "Global input hooks stopped.");
         }
     }
 }

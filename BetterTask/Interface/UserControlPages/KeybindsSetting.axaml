@@ -1,0 +1,101 @@
+<UserControl x:Class="BetterTask.Interface.UserControlPages.KeybindsSetting"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="26" Spacing="18">
+        <StackPanel Spacing="4" Margin="0,0,0,4">
+            <TextBlock Text="Keybinds" FontSize="25" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+            <TextBlock Text="Choose keys for recording and playback actions."
+                       FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid x:Name="keybindsGrid" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto"
+              ColumnSpacing="12" RowSpacing="12">
+            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource OutlineBrush}"
+                    BorderThickness="1" CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Start / stop recording" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="RecordHotkeyButton" Content="None" Height="40" Tag="Recording"
+                            Theme="{StaticResource SecondaryButtonStyle}" Click="SetKey" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Playback" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="PlaybackHotkeyButton" Content="None" Height="40" Tag="Playback"
+                            Theme="{StaticResource SecondaryButtonStyle}" Click="SetKey" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="1" Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Stop playback" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="StopPlaybackHotkeyButton" Content="None" Height="40"
+                            Tag="StopPlayback" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="SetKey" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Pause playback" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="PausePlaybackHotkeyButton" Content="None" Height="40"
+                            Tag="PausePlayback" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="SetKey" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="2" Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Resume playback" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="ResumePlaybackHotkeyButton" Content="None" Height="40"
+                            Tag="ResumePlayback" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="SetKey" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="2" Grid.Column="1" Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Loop playback" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="LoopPlaybackHotkeyButton" Content="None" Height="40"
+                            Tag="LoopPlayback" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="SetKey" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="3" Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Append to recording" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="AppendRecordingHotkeyButton" Content="None" Height="40"
+                            Tag="AppendRecording" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="SetKey" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="12" Padding="14">
+            <StackPanel Spacing="5">
+                <TextBlock Text="Editing a keybind" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Text="Click a keybind, then press a key. Press Esc to cancel, or / to clear it."
+                           FontSize="12" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,37 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ControlTheme x:Key="RoundedCheckBox" TargetType="CheckBox">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Border x:Name="CheckBoxBorder" Width="20" Height="20"
+                            BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                            Background="{DynamicResource CardBrush}" CornerRadius="6">
+                        <Viewbox Width="12" Height="12" Stretch="Uniform"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Path x:Name="CheckMark" Data="M 1,6 L 4.5,9.5 L 11,2"
+                                  Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.8"
+                                  IsVisible="False" />
+                        </Viewbox>
+                    </Border>
+                    <ContentPresenter Content="{TemplateBinding Content}"
+                                      Foreground="{TemplateBinding Foreground}"
+                                      VerticalAlignment="Center" />
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:checked /template/ Border#CheckBoxBorder">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="^:checked /template/ Path#CheckMark">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        <Style Selector="^:pointerover /template/ Border#CheckBoxBorder">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}" />
+        </Style>
+    </ControlTheme>
+</ResourceDictionary>

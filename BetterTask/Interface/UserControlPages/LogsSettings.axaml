@@ -1,0 +1,32 @@
+<UserControl x:Class="BetterTask.Interface.UserControlPages.LogsSettings"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="26" Spacing="16">
+        <StackPanel Spacing="4" Margin="0,0,0,4">
+            <TextBlock Text="Logs" FontSize="25" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+            <TextBlock Text="Recent application activity and diagnostic messages."
+                       FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+            <Button Content="Refresh logs" Height="40"
+                    Theme="{StaticResource SecondaryButtonStyle}"
+                    Click="refreshLogsClicked" />
+            <Button Grid.Column="1" Content="Open logs folder" Height="40"
+                    Theme="{StaticResource SecondaryButtonStyle}"
+                    Click="openLogsFolderClicked" />
+        </Grid>
+
+        <TextBlock x:Name="LogStatus" FontSize="11" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextSecondaryBrush}" />
+        <TextBox x:Name="LogOutput" Height="420" IsReadOnly="True" AcceptsReturn="True"
+                 TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 Background="{DynamicResource CardBrush}"
+                 Foreground="{DynamicResource TextPrimaryBrush}"
+                 BorderBrush="{DynamicResource OutlineBrush}" />
+    </StackPanel>
+</UserControl>

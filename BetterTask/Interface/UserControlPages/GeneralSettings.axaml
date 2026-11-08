@@ -1,0 +1,151 @@
+<UserControl x:Class="BetterTask.Interface.UserControlPages.GeneralSettings"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="26" Spacing="18">
+        <StackPanel Spacing="4" Margin="0,0,0,4">
+            <TextBlock Text="General" FontSize="25" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+            <TextBlock Text="Adjust how BetterTask behaves and stores your preferences."
+                       FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Border Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="13" Padding="16">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                  RowSpacing="14">
+                <StackPanel VerticalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Stay on top" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Keep the BetterTask window above other apps."
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <CheckBox x:Name="stayOnTop" Grid.Column="1" VerticalAlignment="Center"
+                          Theme="{StaticResource RoundedCheckBox}" Click="stayOnTopClicked" />
+
+                <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Check for updates" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Allow BetterTask to check for newer versions."
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <TextBlock x:Name="UpdateStatus" FontSize="11" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center"
+                            HorizontalAlignment="Right" Spacing="6">
+                    <CheckBox x:Name="checkForUpdates" HorizontalAlignment="Right"
+                              Theme="{StaticResource RoundedCheckBox}"
+                              Click="checkForUpdatesClicked" />
+                    <Button x:Name="checkUpdatesButton" Content="Check now" Height="30"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="checkForUpdatesNowClicked" />
+                    <Button x:Name="openUpdateReleaseButton" Content="View release" Height="30"
+                            IsVisible="False" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="openUpdateReleaseClicked" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" VerticalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Save automatically" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Write setting changes as soon as you make them."
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <CheckBox x:Name="saveAutomatically" Grid.Row="2" Grid.Column="1"
+                          VerticalAlignment="Center" Theme="{StaticResource RoundedCheckBox}"
+                          Click="saveAutoClicked" />
+
+                <StackPanel Grid.Row="3" VerticalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Compact UI" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Use the smaller main window layout by default."
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <CheckBox x:Name="compactMode" Grid.Row="3" Grid.Column="1"
+                          VerticalAlignment="Center" Theme="{StaticResource RoundedCheckBox}"
+                          Click="compactModeClicked" />
+
+                <StackPanel Grid.Row="4" VerticalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Compact layout style" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Choose the layout used when compact mode is active."
+                               FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <ComboBox x:Name="compactLayoutStyle" Grid.Row="4" Grid.Column="1"
+                          Width="140" Height="38" VerticalAlignment="Center"
+                          Background="{DynamicResource SurfaceBrush}"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          BorderBrush="{DynamicResource OutlineBrush}"
+                          SelectionChanged="compactLayoutStyleChanged">
+                    <ComboBoxItem Content="Compact" />
+                    <ComboBoxItem Content="Extra compact" />
+                </ComboBox>
+
+                <StackPanel Grid.Row="5" VerticalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Append recording button" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Show a button to record another segment onto the current capture."
+                               FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <CheckBox x:Name="showAppendRecordingButton" Grid.Row="5" Grid.Column="1"
+                          VerticalAlignment="Center" Theme="{StaticResource RoundedCheckBox}"
+                          Click="appendRecordingButtonClicked" />
+
+                <StackPanel Grid.Row="6" VerticalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Loop start delay" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Pause between each playback loop."
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <Border Grid.Row="6" Grid.Column="1" Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                        CornerRadius="9" VerticalAlignment="Center">
+                    <Grid ColumnDefinitions="90,Auto" VerticalAlignment="Center">
+                        <TextBox x:Name="startDelay" TextInput="StartDelayTextInput"
+                                 TextChanged="startDelay_TextChanged" Width="90" Height="36"
+                                 BorderThickness="0" Background="Transparent"
+                                 Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"
+                                 HorizontalContentAlignment="Right"
+                                 VerticalContentAlignment="Center" Padding="8,0" />
+                        <TextBlock Grid.Column="1" Text="ms" Margin="8,0,10,0"
+                                   VerticalAlignment="Center" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <StackPanel Spacing="10">
+            <StackPanel Spacing="3">
+                <TextBlock Text="Settings files" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Text="Load or export a copy of your preferences."
+                           FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+            </StackPanel>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button x:Name="loadSettingsButton" Content="Choose settings file"
+                        Height="42" Theme="{StaticResource SecondaryButtonStyle}"
+                        Click="loadSettingsClicked" />
+                <Button x:Name="saveSettingsButton" Grid.Column="1" Content="Save settings"
+                        Height="42" Theme="{StaticResource SecondaryButtonStyle}"
+                        Click="saveSettingsClicked" />
+            </Grid>
+            <Button x:Name="exportSettingsButton" Content="Export settings"
+                    Height="42" HorizontalAlignment="Stretch"
+                    Theme="{StaticResource SecondaryButtonStyle}"
+                    Click="exportSettingsClicked" />
+            <Button x:Name="openSettingsFolderButton" Content="Open settings folder"
+                    Height="42" HorizontalAlignment="Stretch"
+                    Theme="{StaticResource SecondaryButtonStyle}"
+                    Click="openSettingsFolderClicked" />
+            <Button x:Name="openLogsFolderButton" Content="Open logs folder"
+                    Height="42" HorizontalAlignment="Stretch"
+                    Theme="{StaticResource SecondaryButtonStyle}"
+                    Click="openLogsFolderClicked" />
+            <TextBlock x:Name="SettingsFolderStatus" FontSize="11" TextWrapping="Wrap"
+                       Foreground="{DynamicResource DangerBrush}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,36 @@
+<Application x:Class="BetterTask.App"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             RequestedThemeVariant="Dark">
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+    </Application.Styles>
+    <Application.Resources>
+        <ResourceDictionary>
+            <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0B1017" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#E6121A25" />
+            <SolidColorBrush x:Key="CardBrush" Color="#E6172230" />
+            <SolidColorBrush x:Key="CardHoverBrush" Color="#F0202E3E" />
+            <SolidColorBrush x:Key="CardPressedBrush" Color="#263448" />
+            <SolidColorBrush x:Key="OutlineBrush" Color="#29384A" />
+            <SolidColorBrush x:Key="OutlineHoverBrush" Color="#42566D" />
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F1F4F9" />
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="#9BA9B9" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#7569E8" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#897DF4" />
+            <SolidColorBrush x:Key="AccentPressedBrush" Color="#6054D0" />
+            <SolidColorBrush x:Key="AccentSoftBrush" Color="#252345" />
+            <SolidColorBrush x:Key="SuccessBrush" Color="#53C69A" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#E35E71" />
+            <SolidColorBrush x:Key="DangerSurfaceBrush" Color="#47242D" />
+            <SolidColorBrush x:Key="DangerHoverBrush" Color="#60303A" />
+            <SolidColorBrush x:Key="DangerTextBrush" Color="#FFDDE2" />
+            <SolidColorBrush x:Key="PrimaryButtonBackgroundBrush" Color="#7569E8" />
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="/Interface/Style/ButtonStyle.axaml" />
+                <ResourceInclude Source="/Interface/Style/RoundedCheckBox.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,189 @@
+<UserControl x:Class="BetterTask.Interface.UserControlPages.ThemesSettings"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="26" Spacing="18">
+        <StackPanel Spacing="4" Margin="0,0,0,4">
+            <TextBlock Text="Themes" FontSize="25" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+            <TextBlock Text="Customize the app colors, gradients, and background image."
+                       FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Border Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="13" Padding="16">
+            <StackPanel Spacing="12">
+                <StackPanel Spacing="3">
+                    <TextBlock Text="Theme presets" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Apply a built-in look, save your own, or share a preset file."
+                               FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <ComboBox x:Name="BuiltInPresetComboBox" Height="40"
+                              Background="{DynamicResource SurfaceBrush}"
+                              Foreground="{DynamicResource TextPrimaryBrush}"
+                              BorderBrush="{DynamicResource OutlineBrush}" />
+                    <Button Grid.Column="1" Content="Apply built-in" Width="126" Height="40"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="applyBuiltInPresetClicked" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <TextBox x:Name="PresetNameTextBox" Height="40" Padding="10,8"
+                             PlaceholderText="Name this custom preset"
+                             Background="{DynamicResource SurfaceBrush}"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             BorderBrush="{DynamicResource OutlineBrush}" />
+                    <Button Grid.Column="1" Content="Save current" Width="126" Height="40"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="saveCustomPresetClicked" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                    <ComboBox x:Name="CustomPresetComboBox" Height="40"
+                              Background="{DynamicResource SurfaceBrush}"
+                              Foreground="{DynamicResource TextPrimaryBrush}"
+                              BorderBrush="{DynamicResource OutlineBrush}" />
+                    <Button Grid.Column="1" Content="Apply" Width="78" Height="40"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="applyCustomPresetClicked" />
+                    <Button Grid.Column="2" Content="Delete" Width="78" Height="40"
+                            Theme="{StaticResource DangerButtonStyle}"
+                            Click="deleteCustomPresetClicked" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Button Content="Import preset file" Height="40"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="importThemePresetClicked" />
+                    <Button Grid.Column="1" Content="Export current theme" Height="40"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="exportCurrentThemePresetClicked" />
+                </Grid>
+                <TextBlock x:Name="PresetStatusText" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+            </StackPanel>
+        </Border>
+
+        <Border Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="13" Padding="16">
+            <StackPanel Spacing="12">
+                <StackPanel Spacing="3">
+                    <TextBlock Text="Background image" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Choose an image or animated GIF for the main, settings, and macro windows."
+                               FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <TextBlock x:Name="BackgroundPathText" Text="No background image selected"
+                           FontSize="12" TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Button x:Name="ImportBackgroundButton" Content="Import image or GIF"
+                            Height="40" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="importBackgroundClicked" />
+                    <Button x:Name="ClearBackgroundButton" Grid.Column="1" Content="Clear"
+                            Width="82" Height="40" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="clearBackgroundClicked" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Image visibility" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBlock Text="Adjust how strongly the image shows through the interface."
+                                   FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </StackPanel>
+                    <TextBlock x:Name="BackgroundOpacityText" Grid.Column="1" Text="30%"
+                               VerticalAlignment="Center" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </Grid>
+                <Slider x:Name="BackgroundOpacitySlider" Minimum="0.05" Maximum="1"
+                        Height="24" ValueChanged="backgroundOpacityChanged" />
+            </StackPanel>
+        </Border>
+
+        <Border Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="13" Padding="16">
+            <StackPanel Spacing="12">
+                <StackPanel Spacing="3">
+                    <TextBlock Text="Gradients" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Apply editable gradients to the window background and primary buttons."
+                               FontSize="12" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <CheckBox x:Name="UseBackgroundGradientCheckBox"
+                          Content="Use a background gradient"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          Theme="{StaticResource RoundedCheckBox}"
+                          Click="useBackgroundGradientClicked" />
+                <CheckBox x:Name="AnimateBackgroundGradientCheckBox"
+                          Content="Animate the background gradient"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          Theme="{StaticResource RoundedCheckBox}"
+                          Click="animateBackgroundGradientClicked" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Background start" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <ColorPicker x:Name="BackgroundGradientStartPicker" Height="38"
+                                     IsAlphaEnabled="True"
+                                     ColorChanged="backgroundGradientStartChanged" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="6">
+                        <TextBlock Text="Background end" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <ColorPicker x:Name="BackgroundGradientEndPicker" Height="38"
+                                     IsAlphaEnabled="True"
+                                     ColorChanged="backgroundGradientEndChanged" />
+                    </StackPanel>
+                </Grid>
+                <CheckBox x:Name="UseAccentGradientCheckBox" Content="Use a primary button gradient"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          Theme="{StaticResource RoundedCheckBox}"
+                          Click="useAccentGradientClicked" />
+                <CheckBox x:Name="AnimateAccentGradientCheckBox"
+                          Content="Animate the primary button gradient"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          Theme="{StaticResource RoundedCheckBox}"
+                          Click="animateAccentGradientClicked" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Button gradient start" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <ColorPicker x:Name="AccentGradientStartPicker" Height="38"
+                                     IsAlphaEnabled="True"
+                                     ColorChanged="accentGradientStartChanged" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="6">
+                        <TextBlock Text="Button gradient end" FontSize="12"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <ColorPicker x:Name="AccentGradientEndPicker" Height="38"
+                                     IsAlphaEnabled="True"
+                                     ColorChanged="accentGradientEndChanged" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Border Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="13" Padding="16">
+            <StackPanel Spacing="12">
+                <StackPanel Spacing="3">
+                    <TextBlock Text="Color palette" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Choose a color for every interface color role."
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <StackPanel x:Name="ColorEditors" Spacing="6" />
+            </StackPanel>
+        </Border>
+
+        <Button Content="Reset theme to defaults" Height="42"
+                Theme="{StaticResource SecondaryButtonStyle}" Click="resetThemeClicked" />
+    </StackPanel>
+</UserControl>

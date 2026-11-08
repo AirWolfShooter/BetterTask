@@ -1,86 +1,113 @@
-﻿using BetterTask.Core.RecordingAndPlayback;
-using BetterTask.Interface;
-using BetterTask.Interface.UserControlPages;
-using BetterTask.Utils;
-using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.Json;
+using Avalonia.Controls;
+using Avalonia.Platform.Storage;
+using BetterTask.Utils;
 
-namespace BetterTask.Interface.Managers
+namespace BetterTask.Interface.Managers;
+
+internal class SettingsManager
 {
-    internal class SettingsManager
+    private static readonly SettingsManager instance = new();
+    public static SettingsManager Instance => instance;
+
+    private static readonly FilePickerFileType JsonFileType = new("JSON files")
     {
-        private static SettingsManager instance = new SettingsManager();
-        public static SettingsManager Instance => instance;
+        Patterns = new[] { "*.json" }
+    };
 
-        private string settingsFile;
-        string folder;
+    private readonly string settingsFile;
+    private readonly string folder;
+    public string SettingsDirectory => folder;
 
-        public AppSettings settings { get; private set; } = new();
+    public AppSettings settings { get; private set; } = new();
 
-        private SettingsManager()
+    private SettingsManager()
+    {
+        folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BetterTask");
+        Directory.CreateDirectory(folder);
+        settingsFile = Path.Combine(folder, "settings.json");
+        loadSettingsFromSaved();
+    }
+
+    public void saveSettings()
+    {
+        string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
         {
-            folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BetterTask");
+            WriteIndented = true
+        });
+        File.WriteAllText(settingsFile, json);
+    }
 
-            Directory.CreateDirectory(folder);
-
-            settingsFile = Path.Combine(folder, "settings.json");
-
-            loadSettingsFromSaved();
+    public async Task loadSettingsAsync(Window owner)
+    {
+        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Load Settings",
+            AllowMultiple = false,
+            FileTypeFilter = new[] { JsonFileType }
+        });
+        if (files.Count == 0)
+        {
+            return;
         }
 
-        public void saveSettings()
+        await using Stream stream = await files[0].OpenReadAsync();
+        AppSettings? loadedSettings = await JsonSerializer.DeserializeAsync<AppSettings>(stream);
+        if (loadedSettings is not null)
         {
-            string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-            });
+            settings = loadedSettings;
+            normalizeSettings();
+            AppLogger.Info("Settings", "Loaded settings from a selected file.");
+        }
+    }
 
-            File.WriteAllText(settingsFile, json);
+    public void loadSettingsFromSaved()
+    {
+        if (File.Exists(settingsFile))
+        {
+            settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(settingsFile)) ?? new AppSettings();
+            normalizeSettings();
+            AppLogger.Info("Settings", "Loaded saved application settings.");
+        }
+        else
+        {
+            AppLogger.Info("Settings", "No saved settings file was found; using defaults.");
+        }
+    }
+
+    private void normalizeSettings()
+    {
+        settings.Theme ??= new ThemeSettings();
+        settings.Theme.Normalize();
+        settings.CompactStyle = Math.Clamp(settings.CompactStyle, 0, 1);
+        settings.ThemePresets ??= new List<ThemePreset>();
+        foreach (ThemePreset preset in settings.ThemePresets)
+        {
+            preset.Theme ??= new ThemeSettings();
+            preset.Theme.Normalize();
+        }
+    }
+
+    public async Task exportSettingsAsync(Window owner)
+    {
+        var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export Settings",
+            SuggestedFileName = "settings.json",
+            DefaultExtension = "json",
+            FileTypeChoices = new[] { JsonFileType }
+        });
+        if (file is null)
+        {
+            return;
         }
 
-        public void loadSettings()
+        await using Stream stream = await file.OpenWriteAsync();
+        await JsonSerializer.SerializeAsync(stream, settings, new JsonSerializerOptions
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*";
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                string json = File.ReadAllText(openFileDialog.FileName);
-                AppSettings? loadedSettings = JsonSerializer.Deserialize<AppSettings>(json);
-                if (loadedSettings != null)
-                {
-                    settings = loadedSettings;
-                }
-            }
-        }
-        public void loadSettingsFromSaved()
-        {
-            if (File.Exists(settingsFile))
-            {
-                settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(settingsFile)) ?? new AppSettings();
-            }
-        }
-        public void exportSettings()
-        {
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*";
-            saveFileDialog.DefaultExt = "json";
-            saveFileDialog.FileName = "settings.json";
-
-            if (saveFileDialog.ShowDialog() == true)
-            {
-                string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-                File.WriteAllText(saveFileDialog.FileName, json);
-
-            }
-
-        }
+            WriteIndented = true
+        });
+        AppLogger.Info("Settings", "Exported application settings.");
     }
 }

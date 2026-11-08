@@ -1,0 +1,66 @@
+<Window x:Class="BetterTask.Interface.MacroWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Macro Library" Height="610" Width="850" MinHeight="460" MinWidth="680"
+        Background="{DynamicResource AppBackgroundBrush}" CanResize="True"
+        WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Image x:Name="ThemeBackgroundImage" Stretch="UniformToFill" Opacity="0.3"
+               IsVisible="False" IsHitTestVisible="False" />
+        <Grid Margin="22" RowDefinitions="Auto,*,Auto" RowSpacing="16">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+            <StackPanel VerticalAlignment="Center" Spacing="4">
+                <TextBlock Text="Macro Library" FontSize="24" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Text="Run a saved macro or manage your recordings."
+                           FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" />
+            </StackPanel>
+            <Button x:Name="OpenRecordingsFolderButton" Grid.Column="1" Content="Open macro folder"
+                    Width="145" Height="42" Theme="{StaticResource SecondaryButtonStyle}"
+                    Click="openRecordingsFolderClicked" />
+            <Button x:Name="ImportButton" Grid.Column="2" Content="Import macro"
+                    Width="132" Height="42" Theme="{StaticResource SecondaryButtonStyle}"
+                    Click="importRecordingClicked" />
+        </Grid>
+
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="16" Padding="12">
+            <Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="RecordingContainer" Spacing="8" />
+                </ScrollViewer>
+                <StackPanel x:Name="EmptyStateText" HorizontalAlignment="Center"
+                            VerticalAlignment="Center" MaxWidth="360" Spacing="8">
+                    <TextBlock Text="Your library is empty" FontSize="18" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Save a recording or import a macro to see it here."
+                               FontSize="13" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="14" Padding="14">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                <StackPanel VerticalAlignment="Center" Spacing="3">
+                    <TextBlock Text="CURRENT CAPTURE" FontSize="10" FontWeight="Bold"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <TextBlock x:Name="CurrentRecordingSummary" Text="No events recorded"
+                               FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" />
+                </StackPanel>
+                <Button x:Name="ExportCurrentButton" Grid.Column="1" Content="Export"
+                        Width="105" Height="40" Theme="{StaticResource SecondaryButtonStyle}"
+                        Click="exportCurrentRecordingClicked" />
+                <Button x:Name="SaveButton" Grid.Column="2" Content="Save capture"
+                        Width="130" Height="40" Theme="{StaticResource RoundedButtonStyle}"
+                        Click="saveCurrentRecordingClicked" />
+            </Grid>
+        </Border>
+        </Grid>
+    </Grid>
+</Window>

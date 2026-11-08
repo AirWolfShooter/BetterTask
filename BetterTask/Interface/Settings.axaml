@@ -1,0 +1,56 @@
+<Window x:Class="BetterTask.Interface.Settings"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Height="620" Width="900" MinHeight="500" MinWidth="720"
+        Background="{DynamicResource AppBackgroundBrush}" CanResize="True"
+        WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Image x:Name="ThemeBackgroundImage" Stretch="UniformToFill" Opacity="0.3"
+               IsVisible="False" IsHitTestVisible="False" />
+        <Grid Margin="18" ColumnDefinitions="210,*" ColumnSpacing="16">
+        <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="16" Padding="12">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <StackPanel Margin="8,8,8,22" Spacing="4">
+                    <TextBlock Text="PREFERENCES" FontSize="10" FontWeight="Bold"
+                               Foreground="{DynamicResource AccentHoverBrush}" />
+                    <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Make BetterTask yours."
+                               FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Spacing="8">
+                    <Button x:Name="GeneralButton" Content="General" Height="44"
+                            HorizontalContentAlignment="Left"
+                            Theme="{StaticResource RoundedButtonStyle}" Click="GeneralSettingsClick" />
+                    <Button x:Name="KeybindsButton" Content="Keybinds" Height="44"
+                            HorizontalContentAlignment="Left"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="KeybindsSettingsClick" />
+                    <Button x:Name="ThemesButton" Content="Themes" Height="44"
+                            HorizontalContentAlignment="Left"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="ThemesSettingsClick" />
+                    <Button x:Name="LogsButton" Content="Logs" Height="44"
+                            HorizontalContentAlignment="Left"
+                            Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="LogsSettingsClick" />
+                </StackPanel>
+                <TextBlock Grid.Row="2" Text="Settings are stored locally."
+                           FontSize="11" TextWrapping="Wrap" Margin="8"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="16" Padding="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ContentControl x:Name="ShownContent" />
+            </ScrollViewer>
+        </Border>
+        </Grid>
+    </Grid>
+</Window>

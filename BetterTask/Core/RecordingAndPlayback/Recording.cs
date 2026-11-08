@@ -1,14 +1,13 @@
-﻿using BetterTask.Interface;
+using BetterTask.Interface;
 using BetterTask.Interface.Managers;
 using BetterTask.Interface.UserControlPages;
-using BetterTask.Interface.Utils;
+using BetterTask.Utils;
 using SharpHook;
 using SharpHook.Data;
 using SharpHook.Providers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Windows.Media;
 
 namespace BetterTask.Core.RecordingAndPlayback
 {
@@ -24,16 +23,25 @@ namespace BetterTask.Core.RecordingAndPlayback
         private int lastMouseX;
         private int lastMouseY;
 
-        private const int mouseMoveThreshold = 0;
+        private const int mouseMoveThreshold = 1;
 
         private readonly Stopwatch timer = new Stopwatch();
+        private long recordingTimeOffset;
         public long RecordingTime => timer.ElapsedMilliseconds;
 
         public static bool isRecording;
 
 
-        public void Subscribe()
+        public void Subscribe(bool appendToExisting = false)
         {
+            if (isRecording)
+                return;
+
+            recordingTimeOffset = appendToExisting && RecordedEvents.Count > 0
+                ? Math.Max(0, RecordedEvents[^1].Time)
+                : 0;
+            isRecording = true;
+
             GlobalHookManager.Instance.MouseMoved += onMouseMove;
             GlobalHookManager.Instance.MouseClicked += onMouseClick;
             GlobalHookManager.Instance.MousePressed += onMouseDown;
@@ -41,21 +49,22 @@ namespace BetterTask.Core.RecordingAndPlayback
             GlobalHookManager.Instance.MouseWheel += onMouseWheel;
             GlobalHookManager.Instance.KeyPressed += onKeyDown;
             GlobalHookManager.Instance.KeyReleased += onKeyUp;
-
-            CompositionTarget.Rendering += MainWindow.Instance.UpdateTimer;
             MainWindow.Instance.resetTimer();
 
             timer.Restart();
 
-            isRecording = true;
-
             pressedKeys.Clear();
+            AppLogger.Info(
+                "Recording",
+                appendToExisting
+                    ? $"Started appended capture after {RecordedEvents.Count:N0} existing events."
+                    : "Started a new capture.");
         }
 
         private void AddEvent(RecordedEvent recordedEvent)
         {
+            recordedEvent.Time += recordingTimeOffset;
             RecordedEvents.Add(recordedEvent);
-            System.Diagnostics.Debug.WriteLine($"added event: {recordedEvent}");
         }
 
         public void onMouseMove(object? sender, MouseHookEventArgs e)
@@ -116,11 +125,14 @@ namespace BetterTask.Core.RecordingAndPlayback
 
         public void onMouseWheel(object? sender, MouseWheelHookEventArgs e)
         {
+            int rotationAsInt = e.Data.Rotation/3;
             AddEvent(new RecordedEvent
             {
                 Time = timer.ElapsedMilliseconds,
                 Type = EventType.MouseWheel,
-                Rotation = e.Data.Rotation,
+                MouseX = e.Data.X,
+                MouseY = e.Data.Y,
+                Rotation = (short)rotationAsInt,
                 WheelDelta = e.Data.Delta,
                 ScrollType = e.Data.Type,
                 ScrollDirection = e.Data.Direction
@@ -158,6 +170,9 @@ namespace BetterTask.Core.RecordingAndPlayback
 
         public void Unsubscribe()
         {
+            if (!isRecording)
+                return;
+
             GlobalHookManager.Instance.MouseMoved -= onMouseMove;
             GlobalHookManager.Instance.MouseClicked -= onMouseClick;
             GlobalHookManager.Instance.MouseWheel -= onMouseWheel;
@@ -166,12 +181,13 @@ namespace BetterTask.Core.RecordingAndPlayback
 
             GlobalHookManager.Instance.KeyPressed -= onKeyDown;
             GlobalHookManager.Instance.KeyReleased -= onKeyUp;
-
-            CompositionTarget.Rendering -= MainWindow.Instance.UpdateTimer;
             MainWindow.displayTimer.Stop();
 
             pressedKeys.Clear();
 
+            AppLogger.Info(
+                "Recording",
+                $"Stopped capture after {timer.ElapsedMilliseconds:N0} ms with {RecordedEvents.Count:N0} total events.");
             timer.Stop();
 
             isRecording = false;
@@ -181,13 +197,17 @@ namespace BetterTask.Core.RecordingAndPlayback
         {
             if (!isRecording)
             {
+                int previousEventCount = RecordedEvents.Count;
                 RecordedEvents.Clear();
                 pressedKeys.Clear();
 
                 lastMouseX = 0;
                 lastMouseY = 0;
+                recordingTimeOffset = 0;
 
                 timer.Reset();
+                if (previousEventCount > 0)
+                    AppLogger.Info("Recording", $"Cleared the previous capture ({previousEventCount:N0} events).");
             }
         }
 
