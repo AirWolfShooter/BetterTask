@@ -10,13 +10,16 @@
                        TextWrapping="Wrap" />
         </StackPanel>
 
-        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
             <Button Content="Refresh logs" Height="40"
                     Theme="{StaticResource SecondaryButtonStyle}"
                     Click="refreshLogsClicked" />
             <Button Grid.Column="1" Content="Open logs folder" Height="40"
                     Theme="{StaticResource SecondaryButtonStyle}"
                     Click="openLogsFolderClicked" />
+            <Button Grid.Column="2" Content="Copy logs" Height="40"
+                    Theme="{StaticResource SecondaryButtonStyle}"
+                    Click="copyLogsClicked" />
         </Grid>
 
         <TextBlock x:Name="LogStatus" FontSize="11" TextWrapping="Wrap"

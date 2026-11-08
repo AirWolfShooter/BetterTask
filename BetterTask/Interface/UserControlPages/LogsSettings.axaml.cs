@@ -1,5 +1,6 @@
 using System.IO;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using BetterTask.Utils;
 
@@ -18,6 +19,33 @@ public partial class LogsSettings : UserControl
     private void refreshLogsClicked(object? sender, RoutedEventArgs e)
     {
         LoadLogs();
+    }
+
+    private async void copyLogsClicked(object? sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(LogOutput.Text))
+        {
+            LogStatus.Text = "There are no log entries to copy.";
+            return;
+        }
+
+        IClipboard? clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is null)
+        {
+            LogStatus.Text = "Clipboard access is unavailable.";
+            return;
+        }
+
+        try
+        {
+            await clipboard.SetTextAsync(LogOutput.Text);
+            LogStatus.Text = "Copied log entries to the clipboard.";
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Warning("Logs", "Could not copy log entries to the clipboard.", ex);
+            LogStatus.Text = $"Could not copy logs: {ex.Message}";
+        }
     }
 
     private void openLogsFolderClicked(object? sender, RoutedEventArgs e)
