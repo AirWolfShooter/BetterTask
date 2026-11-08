@@ -37,10 +37,12 @@
                     <CheckBox x:Name="checkForUpdates" HorizontalAlignment="Right"
                               Theme="{StaticResource RoundedCheckBox}"
                               Click="checkForUpdatesClicked" />
-                    <Button x:Name="checkUpdatesButton" Content="Check now" Height="30"
+                    <Button x:Name="checkUpdatesButton" Content="Check now" Height="38"
+                            Padding="10,4"
                             Theme="{StaticResource SecondaryButtonStyle}"
                             Click="checkForUpdatesNowClicked" />
-                    <Button x:Name="openUpdateReleaseButton" Content="View release" Height="30"
+                    <Button x:Name="openUpdateReleaseButton" Content="View release" Height="38"
+                            Padding="10,4"
                             IsVisible="False" Theme="{StaticResource SecondaryButtonStyle}"
                             Click="openUpdateReleaseClicked" />
                 </StackPanel>

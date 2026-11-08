@@ -19,6 +19,7 @@ public sealed record UpdateCheckResult(
     Version CurrentVersion,
     Version? LatestVersion = null,
     string? ReleaseUrl = null,
+    string? ReleaseNotes = null,
     string? ErrorMessage = null);
 
 public static class GitHubUpdateChecker
@@ -68,7 +69,12 @@ public static class GitHubUpdateChecker
                     ? $"Version {latestVersion} is available; current version is {CurrentVersion}."
                     : $"Current version {CurrentVersion} is up to date.");
 
-            return new UpdateCheckResult(status, CurrentVersion, latestVersion, releaseUri.AbsoluteUri);
+            return new UpdateCheckResult(
+                status,
+                CurrentVersion,
+                latestVersion,
+                releaseUri.AbsoluteUri,
+                release.Body);
         }
         catch (Exception ex) when (ex is HttpRequestException
             or TaskCanceledException
@@ -127,5 +133,8 @@ public static class GitHubUpdateChecker
 
         [JsonPropertyName("html_url")]
         public string? HtmlUrl { get; set; }
+
+        [JsonPropertyName("body")]
+        public string? Body { get; set; }
     }
 }

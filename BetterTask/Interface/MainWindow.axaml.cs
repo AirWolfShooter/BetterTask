@@ -68,8 +68,8 @@ public partial class MainWindow : Window
         var dialog = new Window
         {
             Title = "BetterTask update available",
-            Width = 400,
-            Height = 210,
+            Width = 500,
+            Height = 420,
             CanResize = false,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Background = ThemeManager.Instance.GetBrush("AppBackgroundBrush", "#FF171821")
@@ -77,8 +77,9 @@ public partial class MainWindow : Window
 
         var openReleaseButton = new Button
         {
-            Content = "View GitHub release",
+            Content = "Open GitHub changelog",
             Height = 38,
+            Padding = new Thickness(10, 4),
             Theme = Application.Current?.TryGetResource("SecondaryButtonStyle", ThemeVariant.Default, out object? theme) == true
                 ? theme as ControlTheme
                 : null
@@ -99,13 +100,59 @@ public partial class MainWindow : Window
             }
         };
 
-        var laterButton = new Button { Content = "Later", Height = 38 };
+        var laterButton = new Button
+        {
+            Content = "Later",
+            Height = 38,
+            Padding = new Thickness(10, 4),
+            Theme = Application.Current?.TryGetResource("SecondaryButtonStyle", ThemeVariant.Default, out object? laterTheme) == true
+                ? laterTheme as ControlTheme
+                : null
+        };
         laterButton.Click += (_, _) => dialog.Close();
+
+        var releaseNotes = new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(result.ReleaseNotes)
+                ? "No release notes were provided. Open the GitHub release for details and downloads."
+                : result.ReleaseNotes.Trim(),
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            Foreground = ThemeManager.Instance.GetBrush("TextPrimaryBrush", "#FFFFFFFF"),
+            FontSize = 12
+        };
+
+        var releaseNotesPanel = new Border
+        {
+            Background = ThemeManager.Instance.GetBrush("CardBrush", "#FF20232E"),
+            BorderBrush = ThemeManager.Instance.GetBrush("OutlineBrush", "#FF343847"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9),
+            Padding = new Thickness(12),
+            Child = new ScrollViewer
+            {
+                MaxHeight = 180,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                Content = releaseNotes
+            }
+        };
+
+        var buttons = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            ColumnSpacing = 10,
+            Children =
+            {
+                openReleaseButton,
+                laterButton
+            }
+        };
+        Grid.SetColumn(laterButton, 1);
 
         dialog.Content = new StackPanel
         {
-            Margin = new Thickness(24),
-            Spacing = 18,
+            Margin = new Thickness(22),
+            Spacing = 12,
             Children =
             {
                 new TextBlock
@@ -115,8 +162,15 @@ public partial class MainWindow : Window
                     Foreground = ThemeManager.Instance.GetBrush("TextPrimaryBrush", "#FFFFFFFF"),
                     FontSize = 14
                 },
-                openReleaseButton,
-                laterButton
+                new TextBlock
+                {
+                    Text = "Changelog",
+                    FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                    Foreground = ThemeManager.Instance.GetBrush("TextPrimaryBrush", "#FFFFFFFF"),
+                    FontSize = 13
+                },
+                releaseNotesPanel,
+                buttons
             }
         };
 
