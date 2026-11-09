@@ -79,7 +79,7 @@ public static class GitHubUpdateChecker
                 releaseUri.AbsoluteUri,
                 release.Body,
                 Asset: release.Assets.FirstOrDefault(a =>
-                    a.Name.Equals($"BetterTask-v{latestVersion}-win-{System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()}.zip", StringComparison.OrdinalIgnoreCase))
+                    a.Name.Equals($"BetterTask-v{latestVersion}-win-{System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()}.exe", StringComparison.OrdinalIgnoreCase))
                     is { } asset ? new UpdateAsset(asset.Name, asset.DownloadUrl, asset.Digest, asset.Size) : null);
         }
         catch (Exception ex) when (ex is HttpRequestException

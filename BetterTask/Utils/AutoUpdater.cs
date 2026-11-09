@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -34,7 +33,7 @@ public static class AutoUpdater
             File.Delete(probe);
             string workspace = Path.Combine(Path.GetTempPath(), "BetterTask-Updates", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(workspace);
-            string zipPath = Path.Combine(workspace, "update.zip");
+            string downloadPath = Path.Combine(workspace, "BetterTask.exe");
             using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
             client.DefaultRequestHeaders.UserAgent.ParseAdd($"BetterTask/{GitHubUpdateChecker.CurrentVersion}");
             progress.Report("Downloading update...");
@@ -42,21 +41,22 @@ public static class AutoUpdater
             {
                 response.EnsureSuccessStatusCode();
                 await using var source = await response.Content.ReadAsStreamAsync();
-                await using var output = File.Create(zipPath);
+                await using var output = File.Create(downloadPath);
                 await source.CopyToAsync(output);
             }
-            if (asset.Size <= 0 || new FileInfo(zipPath).Length != asset.Size)
+            if (asset.Size <= 0 || new FileInfo(downloadPath).Length != asset.Size)
                 throw new InvalidDataException("The update download is incomplete.");
             if (asset.Digest is { Length: > 0 })
             {
-                await using var input = File.OpenRead(zipPath);
+                await using var input = File.OpenRead(downloadPath);
                 string actual = "sha256:" + Convert.ToHexString(await SHA256.HashDataAsync(input));
                 if (!actual.Equals(asset.Digest, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidDataException("The update checksum did not match. Your current installation was not changed.");
             }
             progress.Report("Preparing update...");
             string staged = Path.Combine(workspace, "staged");
-            await Task.Run(() => ZipFile.ExtractToDirectory(zipPath, staged));
+            Directory.CreateDirectory(staged);
+            File.Copy(downloadPath, Path.Combine(staged, "BetterTask.exe"));
             if (!File.Exists(Path.Combine(staged, "BetterTask.exe")))
                 throw new InvalidDataException("The release ZIP does not contain BetterTask.exe at its root.");
             // Reject links in the destination rather than writing outside the installation.
