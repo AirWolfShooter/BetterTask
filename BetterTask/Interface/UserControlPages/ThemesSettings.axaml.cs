@@ -441,9 +441,12 @@ public partial class ThemesSettings : UserControl
             string destinationPath = Path.Combine(
                 importDirectory,
                 $"{safeName}-{Guid.NewGuid():N}{extension}");
-            await using Stream source = await files[0].OpenReadAsync();
-            await using var destination = File.Create(destinationPath);
-            await source.CopyToAsync(destination);
+            await using (Stream source = await files[0].OpenReadAsync())
+            await using (var destination = File.Create(destinationPath))
+            {
+                await source.CopyToAsync(destination);
+                await destination.FlushAsync();
+            }
 
             ThemeData.BackgroundImagePath = destinationPath;
             BackgroundPathText.Text = Path.GetFileName(destinationPath);

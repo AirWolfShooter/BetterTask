@@ -30,6 +30,7 @@ namespace BetterTask.Core.RecordingAndPlayback
         public long RecordingTime => timer.ElapsedMilliseconds;
 
         public static bool isRecording;
+        public static bool isPaused;
 
 
         public void Subscribe(bool appendToExisting = false)
@@ -41,6 +42,7 @@ namespace BetterTask.Core.RecordingAndPlayback
                 ? Math.Max(0, RecordedEvents[^1].Time)
                 : 0;
             isRecording = true;
+            isPaused = false;
 
             GlobalHookManager.Instance.MouseMoved += onMouseMove;
             GlobalHookManager.Instance.MouseClicked += onMouseClick;
@@ -63,6 +65,9 @@ namespace BetterTask.Core.RecordingAndPlayback
 
         private void AddEvent(RecordedEvent recordedEvent)
         {
+            if (isPaused)
+                return;
+
             recordedEvent.Time += recordingTimeOffset;
             RecordedEvents.Add(recordedEvent);
         }
@@ -168,6 +173,24 @@ namespace BetterTask.Core.RecordingAndPlayback
             });
         }
 
+        public void Pause()
+        {
+            if (!isRecording || isPaused)
+                return;
+            isPaused = true;
+            timer.Stop();
+            AppLogger.Info("Recording", "Recording paused.");
+        }
+
+        public void Resume()
+        {
+            if (!isRecording || !isPaused)
+                return;
+            isPaused = false;
+            timer.Start();
+            AppLogger.Info("Recording", "Recording resumed.");
+        }
+
         public void Unsubscribe()
         {
             if (!isRecording)
@@ -191,6 +214,7 @@ namespace BetterTask.Core.RecordingAndPlayback
             timer.Stop();
 
             isRecording = false;
+            isPaused = false;
         }
 
         public void clearRecording()

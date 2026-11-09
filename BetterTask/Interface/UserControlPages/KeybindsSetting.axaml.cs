@@ -28,7 +28,9 @@ public partial class KeybindsSetting : UserControl
         StopPlayback,
         ResumePlayback,
         LoopPlayback,
-        AppendRecording
+        AppendRecording,
+        PauseRecording,
+        ResumeRecording
     }
 
     public static Dictionary<KeybindType, KeyCode> actions = new();
@@ -62,6 +64,8 @@ public partial class KeybindsSetting : UserControl
         {
             RecordHotkeyButton,
             AppendRecordingHotkeyButton,
+            PauseRecordingHotkeyButton,
+            ResumeRecordingHotkeyButton,
             PlaybackHotkeyButton,
             StopPlaybackHotkeyButton,
             PausePlaybackHotkeyButton,

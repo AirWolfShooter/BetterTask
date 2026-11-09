@@ -13,6 +13,7 @@ public partial class GeneralSettings : UserControl
     private readonly Regex numberRegex = new("[^0-9.]");
     private bool isLoadingSettings;
     private string? latestReleaseUrl;
+    private UpdateCheckResult? availableUpdate;
 
     public GeneralSettings()
     {
@@ -55,20 +56,10 @@ public partial class GeneralSettings : UserControl
         await checkForUpdatesAsync();
     }
 
-    private void openUpdateReleaseClicked(object? sender, RoutedEventArgs e)
+    private async void openUpdateReleaseClicked(object? sender, RoutedEventArgs e)
     {
-        if (latestReleaseUrl is null)
-            return;
-
-        try
-        {
-            FileLocationOpener.OpenUrl(latestReleaseUrl);
-        }
-        catch (Exception ex)
-        {
-            AppLogger.Error("Updates", "Could not open the GitHub release page.", ex);
-            UpdateStatus.Text = $"Could not open the release page: {ex.Message}";
-        }
+        if (availableUpdate is not null)
+            await MainWindow.Instance.ShowUpdateAvailableDialogAsync(availableUpdate);
     }
 
     public void saveAutoClicked(object? sender, RoutedEventArgs e)
@@ -174,6 +165,7 @@ public partial class GeneralSettings : UserControl
         checkUpdatesButton.IsEnabled = false;
         openUpdateReleaseButton.IsVisible = false;
         latestReleaseUrl = null;
+        availableUpdate = null;
         UpdateStatus.Text = "Checking GitHub for updates...";
 
         try
@@ -183,6 +175,7 @@ public partial class GeneralSettings : UserControl
             {
                 case UpdateCheckStatus.UpdateAvailable:
                     UpdateStatus.Text = $"Version {result.LatestVersion} is available (you have {result.CurrentVersion}).";
+                    availableUpdate = result;
                     latestReleaseUrl = result.ReleaseUrl;
                     openUpdateReleaseButton.IsVisible = latestReleaseUrl is not null;
                     break;

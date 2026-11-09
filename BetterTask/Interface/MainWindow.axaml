@@ -64,11 +64,25 @@
                     <Button x:Name="PlayBackButton" Grid.Column="1"
                             Theme="{StaticResource SecondaryButtonStyle}" Content="Play"
                             FontSize="16" Height="62" Click="playbackClicked" />
-                    <Button x:Name="AppendRecordingButton" Grid.Row="1"
-                            Content="Append segment" Width="136" Height="32" FontSize="11"
-                            HorizontalAlignment="Center" IsVisible="False"
-                            Theme="{StaticResource SecondaryButtonStyle}"
-                            Click="appendRecordingClicked" />
+                    <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Spacing="6">
+                        <Button x:Name="AppendRecordingButton" Content="Append segment"
+                                Width="136" Height="32" FontSize="11" IsVisible="False"
+                                Theme="{StaticResource SecondaryButtonStyle}"
+                                Click="appendRecordingClicked" />
+                        <Button x:Name="UndoAppendButton" Content="Undo append"
+                                Width="100" Height="32" FontSize="11" IsVisible="False"
+                                Theme="{StaticResource SecondaryButtonStyle}"
+                                Click="undoAppendClicked" />
+                        <Button x:Name="PauseRecordingButton" Content="Pause recording"
+                                Width="112" Height="32" FontSize="11" IsVisible="False"
+                                Theme="{StaticResource SecondaryButtonStyle}"
+                                Click="pauseRecordingClicked" />
+                        <Button x:Name="ResumeRecordingButton" Content="Resume recording"
+                                Width="112" Height="32" FontSize="11" IsVisible="False"
+                                Theme="{StaticResource SecondaryButtonStyle}"
+                                Click="resumeRecordingClicked" />
+                    </StackPanel>
                 </Grid>
                 <Grid x:Name="SecondaryActions" ColumnDefinitions="*,*" ColumnSpacing="10">
                     <Button x:Name="MacroManagerButton" Theme="{StaticResource SecondaryButtonStyle}"
