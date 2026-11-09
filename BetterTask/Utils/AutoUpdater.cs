@@ -99,19 +99,52 @@ public static class AutoUpdater
         $ErrorActionPreference = 'Stop'
         $m = Get-Content -LiteralPath $Manifest -Raw | ConvertFrom-Json
         $changed = [System.Collections.Generic.List[string]]::new()
+        function Wait-UntilExecutableIsFree {
+            $deadline = [DateTime]::UtcNow.AddSeconds(120)
+            do {
+                $running = Get-CimInstance Win32_Process -Filter "Name='BetterTask.exe'" -ErrorAction SilentlyContinue |
+                    Where-Object { $_.ExecutablePath -and [string]::Equals([IO.Path]::GetFullPath($_.ExecutablePath), [IO.Path]::GetFullPath($m.Executable), [StringComparison]::OrdinalIgnoreCase) }
+                if (!$running) {
+                    $probe = $null
+                    try {
+                        $probe = [IO.File]::Open($m.Executable, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+                        return
+                    } catch {
+                        Start-Sleep -Milliseconds 400
+                    } finally {
+                        if ($probe) { $probe.Dispose() }
+                    }
+                } else {
+                    Start-Sleep -Milliseconds 400
+                }
+            } while ([DateTime]::UtcNow -lt $deadline)
+            throw 'BetterTask.exe is still in use. Close every BetterTask window and retry the update.'
+        }
+        function Copy-WithRetry([string]$Source, [string]$Destination) {
+            $lastError = $null
+            for ($attempt = 0; $attempt -lt 20; $attempt++) {
+                try {
+                    Copy-Item -LiteralPath $Source -Destination $Destination -Force
+                    return
+                } catch {
+                    $lastError = $_
+                    Start-Sleep -Milliseconds 500
+                }
+            }
+            throw $lastError
+        }
         try {
-            $running = Get-Process -Id $m.ProcessId -ErrorAction SilentlyContinue
-            if ($running) { $running | Wait-Process -Timeout 120 }
+            Wait-UntilExecutableIsFree
             foreach ($relative in $m.Files) {
                 $destination = Join-Path $m.Target $relative
                 $backup = Join-Path $m.Backup $relative
                 if (Test-Path -LiteralPath $destination) {
                     [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($backup)) | Out-Null
-                    Copy-Item -LiteralPath $destination -Destination $backup -Force
+                    Copy-WithRetry $destination $backup
                 }
                 $changed.Add($relative)
                 [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
-                Copy-Item -LiteralPath (Join-Path $m.Staged $relative) -Destination $destination -Force
+                Copy-WithRetry (Join-Path $m.Staged $relative) $destination
             }
             Start-Process -FilePath $m.Executable -WorkingDirectory $m.Target
         } catch {
@@ -121,7 +154,7 @@ public static class AutoUpdater
                     $backup = Join-Path $m.Backup $relative
                     $destination = Join-Path $m.Target $relative
                     if (Test-Path -LiteralPath $backup) {
-                        Copy-Item -LiteralPath $backup -Destination $destination -Force
+                        Copy-WithRetry $backup $destination
                     } elseif (Test-Path -LiteralPath $destination) {
                         Remove-Item -LiteralPath $destination -Force
                     }
