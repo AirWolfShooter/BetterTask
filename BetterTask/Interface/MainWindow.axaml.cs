@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     public static bool loop;
     private bool compactMode;
     private bool appendRecordingActive;
+    private List<RecordedEvent>? appendUndoSnapshot;
     private Settings? settingsWindow;
 
     public MainWindow()
@@ -311,11 +312,15 @@ public partial class MainWindow : Window
                 return;
 
             appendRecordingActive = false;
+            appendUndoSnapshot = null;
+            UndoAppendButton.IsVisible = false;
             RecordButton.Background = ThemeManager.Instance.GetBrush("DangerBrush", "#FFE35E71");
             RecordButton.Content = "Recording";
             StatusTextBlock.Text = "Recording...";
             recorder.clearRecording();
             recorder.Subscribe();
+            PauseRecordingButton.IsVisible = true;
+            ResumeRecordingButton.IsVisible = false;
             UpdateAppendRecordingButtonState();
         }
         else
@@ -338,9 +343,13 @@ public partial class MainWindow : Window
         if (Recording.isRecording || Recording.RecordedEvents.Count == 0)
             return;
 
+        appendUndoSnapshot = Recording.RecordedEvents.ToList();
+        UndoAppendButton.IsVisible = false;
         appendRecordingActive = true;
         RecordButton.Background = ThemeManager.Instance.GetBrush("DangerBrush", "#FFE35E71");
         RecordButton.Content = "Recording";
+        PauseRecordingButton.IsVisible = true;
+        ResumeRecordingButton.IsVisible = false;
         AppendRecordingButton.Content = "Finish segment";
         StatusTextBlock.Text = "Appending to recording...";
         recorder.Subscribe(appendToExisting: true);
@@ -368,12 +377,55 @@ public partial class MainWindow : Window
     private void StopRecording(string status)
     {
         recorder.Unsubscribe();
+        bool appendedSegment = appendRecordingActive;
         appendRecordingActive = false;
+        UndoAppendButton.IsVisible = appendedSegment && appendUndoSnapshot is not null
+            && Recording.RecordedEvents.Count > appendUndoSnapshot.Count;
         RecordButton.ClearValue(Button.BackgroundProperty);
         RecordButton.Content = "Record";
+        PauseRecordingButton.IsVisible = false;
+        ResumeRecordingButton.IsVisible = false;
         AppendRecordingButton.Content = "Append segment";
         StatusTextBlock.Text = status;
         UpdateAppendRecordingButtonState();
+    }
+
+    public void pauseRecordingClicked(object? sender, RoutedEventArgs? e) => PauseRecording();
+
+    public void resumeRecordingClicked(object? sender, RoutedEventArgs? e) => ResumeRecording();
+
+    public void PauseRecording()
+    {
+        if (!Recording.isRecording || Recording.isPaused)
+            return;
+        recorder.Pause();
+        PauseRecordingButton.IsVisible = false;
+        ResumeRecordingButton.IsVisible = true;
+        StatusTextBlock.Text = "Recording paused.";
+    }
+
+    public void ResumeRecording()
+    {
+        if (!Recording.isRecording || !Recording.isPaused)
+            return;
+        recorder.Resume();
+        PauseRecordingButton.IsVisible = true;
+        ResumeRecordingButton.IsVisible = false;
+        StatusTextBlock.Text = appendRecordingActive ? "Appending to recording..." : "Recording...";
+    }
+
+    public void undoAppendClicked(object? sender, RoutedEventArgs? e)
+    {
+        if (Recording.isRecording || Playback.playbackStarted || appendUndoSnapshot is null)
+            return;
+
+        Recording.RecordedEvents.Clear();
+        Recording.RecordedEvents.AddRange(appendUndoSnapshot);
+        appendUndoSnapshot = null;
+        UndoAppendButton.IsVisible = false;
+        StatusTextBlock.Text = "Appended segment undone.";
+        UpdateAppendRecordingButtonState();
+        AppLogger.Info("Recording", "Undid the latest appended segment.");
     }
 
     private void UpdateAppendRecordingButtonState()
@@ -381,6 +433,9 @@ public partial class MainWindow : Window
         bool settingEnabled = SettingsManager.Instance.settings.ShowAppendRecordingButton;
         AppendRecordingButton.IsVisible = settingEnabled;
         AppendRecordingButton.Content = appendRecordingActive ? "Finish segment" : "Append segment";
+        UndoAppendButton.IsVisible = SettingsManager.Instance.settings.ShowAppendRecordingButton
+            && !appendRecordingActive && appendUndoSnapshot is not null;
+        UndoAppendButton.IsEnabled = !Recording.isRecording && !Playback.playbackStarted;
         AppendRecordingButton.IsEnabled = settingEnabled
             && (appendRecordingActive
                 || (!Recording.isRecording
@@ -436,6 +491,19 @@ public partial class MainWindow : Window
             PlayBackButton.Content = "Play";
             ButtonStackPanel.IsEnabled = true;
         }
+    }
+
+    public void SetActiveMacro(string name, int eventCount)
+    {
+        if (Recording.isRecording || Playback.playbackStarted || eventCount <= 0)
+            return;
+
+        appendUndoSnapshot = null;
+        UndoAppendButton.IsVisible = false;
+        StatusTextBlock.Text = $"Loaded macro: {name}.";
+        MainWindow.displayTimer.Reset();
+        uiTimer.Stop();
+        uiTimer.Start();
     }
 
     public async void macroManagerClicked(object? sender, RoutedEventArgs? e)

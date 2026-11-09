@@ -31,6 +31,8 @@ public class KeybindsManager
         };
         Actions[KeybindType.AppendRecording] = () =>
             MainWindow.Instance.appendRecordingClicked(null, null);
+        Actions[KeybindType.PauseRecording] = () => MainWindow.Instance.PauseRecording();
+        Actions[KeybindType.ResumeRecording] = () => MainWindow.Instance.ResumeRecording();
         Actions[KeybindType.Playback] = () => MainWindow.Instance.playbackClicked(null, null);
         Actions[KeybindType.PausePlayback] = playback.pausePlayback;
         Actions[KeybindType.StopPlayback] = playback.stopPlayback;

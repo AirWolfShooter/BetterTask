@@ -123,6 +123,15 @@ public partial class MacroWindow : Window
             }
         };
 
+        var equipButton = CreateActionButton("Set active", 88, "RoundedButtonStyle");
+        equipButton.IsEnabled = recording is not null && recording.Events.Count > 0
+            && !Recording.isRecording && !Playback.playbackStarted;
+        equipButton.Click += async (_, _) =>
+        {
+            if (recording is not null)
+                await EquipMacroAsync(filePath, displayName);
+        };
+
         var exportButton = CreateActionButton("Export", 72, "SecondaryButtonStyle");
         exportButton.IsEnabled = recording is not null;
         exportButton.Click += async (_, _) =>
@@ -141,6 +150,7 @@ public partial class MacroWindow : Window
         var deleteButton = CreateActionButton("Delete", 72, "DangerButtonStyle");
         deleteButton.Click += async (_, _) => await DeleteRecordingAsync(filePath, displayName);
 
+        actionButtons.Children.Add(equipButton);
         actionButtons.Children.Add(playButton);
         actionButtons.Children.Add(exportButton);
         actionButtons.Children.Add(deleteButton);
@@ -154,7 +164,7 @@ public partial class MacroWindow : Window
         Grid.SetColumn(actionButtons, 1);
         content.Children.Add(actionButtons);
 
-        return new Border
+        var card = new Border
         {
             Background = GetAppBrush("CardBrush", "#172230"),
             BorderBrush = GetAppBrush("OutlineBrush", "#29384A"),
@@ -163,6 +173,16 @@ public partial class MacroWindow : Window
             Padding = new Thickness(10, 7),
             Child = content
         };
+        if (recording is not null && recording.Events.Count > 0)
+        {
+            card.Tapped += async (_, args) =>
+            {
+                if (ReferenceEquals(args.Source, card))
+                    await EquipMacroAsync(filePath, displayName);
+            };
+        }
+
+        return card;
     }
 
     private Button CreateActionButton(string label, double width, string themeKey = "SecondaryButtonStyle")
@@ -174,6 +194,31 @@ public partial class MacroWindow : Window
             Height = 36,
             Theme = GetButtonTheme(themeKey)
         };
+    }
+
+    private async Task EquipMacroAsync(string filePath, string displayName)
+    {
+        if (Recording.isRecording || Playback.playbackStarted)
+        {
+            await ShowErrorAsync("Stop recording or playback before changing the active macro.");
+            return;
+        }
+
+        try
+        {
+            RecordingFile loaded = EventStore.LoadRecording(filePath)
+                ?? throw new InvalidDataException("This file does not contain a valid macro.");
+            Recording.RecordedEvents.Clear();
+            Recording.RecordedEvents.AddRange(loaded.Events);
+            MainWindow.Instance.SetActiveMacro(loaded.Name, loaded.Events.Count);
+            AppLogger.Info("Macros", $"Loaded '{displayName}' as the active macro ({loaded.Events.Count:N0} events).");
+            Close();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Macros", $"Could not load '{displayName}' as the active macro.", ex);
+            await ShowErrorAsync($"Could not load the macro: {ex.Message}");
+        }
     }
 
     private async Task PlayMacroAsync(RecordingFile recording)

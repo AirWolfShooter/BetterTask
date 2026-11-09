@@ -10,7 +10,7 @@
                        TextWrapping="Wrap" />
         </StackPanel>
 
-        <Grid x:Name="keybindsGrid" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto"
+        <Grid x:Name="keybindsGrid" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
               ColumnSpacing="12" RowSpacing="12">
             <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource OutlineBrush}"
                     BorderThickness="1" CornerRadius="12" Padding="14">
@@ -72,6 +72,28 @@
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <Button x:Name="LoopPlaybackHotkeyButton" Content="None" Height="40"
                             Tag="LoopPlayback" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="SetKey" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="3" Grid.Column="1" Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Pause recording" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="PauseRecordingHotkeyButton" Content="None" Height="40"
+                            Tag="PauseRecording" Theme="{StaticResource SecondaryButtonStyle}"
+                            Click="SetKey" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="4" Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                    CornerRadius="12" Padding="14">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Resume recording" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <Button x:Name="ResumeRecordingHotkeyButton" Content="None" Height="40"
+                            Tag="ResumeRecording" Theme="{StaticResource SecondaryButtonStyle}"
                             Click="SetKey" />
                 </StackPanel>
             </Border>
