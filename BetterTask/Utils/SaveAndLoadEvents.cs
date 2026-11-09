@@ -24,6 +24,8 @@ public class SaveAndLoadEvents
 
     public RecordingFile? CurrentRecording { get; private set; }
 
+    public string? ActiveRecordingPath { get; set; }
+
     private SaveAndLoadEvents()
     {
         Directory.CreateDirectory(RecordingsPath);

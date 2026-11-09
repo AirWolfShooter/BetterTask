@@ -123,7 +123,7 @@ public partial class MacroWindow : Window
             }
         };
 
-        var equipButton = CreateActionButton("Set active", 88, "RoundedButtonStyle");
+        var equipButton = CreateActionButton("Set active", 104, "RoundedButtonStyle");
         equipButton.IsEnabled = recording is not null && recording.Events.Count > 0
             && !Recording.isRecording && !Playback.playbackStarted;
         equipButton.Click += async (_, _) =>
@@ -164,14 +164,36 @@ public partial class MacroWindow : Window
         Grid.SetColumn(actionButtons, 1);
         content.Children.Add(actionButtons);
 
+        bool isActive = recording is not null
+            && string.Equals(EventStore.ActiveRecordingPath, Path.GetFullPath(filePath), StringComparison.OrdinalIgnoreCase);
         var card = new Border
         {
-            Background = GetAppBrush("CardBrush", "#172230"),
-            BorderBrush = GetAppBrush("OutlineBrush", "#29384A"),
+            Background = isActive
+                ? GetAppBrush("AccentSoftBrush", "#332D83F6")
+                : GetAppBrush("CardBrush", "#172230"),
+            BorderBrush = isActive
+                ? GetAppBrush("AccentBrush", "#7569E8")
+                : GetAppBrush("OutlineBrush", "#29384A"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(10),
             Padding = new Thickness(10, 7),
             Child = content
+        };
+        card.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand);
+        card.PointerEntered += (_, _) =>
+        {
+            card.Background = GetAppBrush("CardHoverBrush", "#26364A");
+            card.BorderBrush = GetAppBrush(isActive ? "AccentHoverBrush" : "OutlineHoverBrush",
+                isActive ? "#8A80F5" : "#44536A");
+        };
+        card.PointerExited += (_, _) =>
+        {
+            card.Background = isActive
+                ? GetAppBrush("AccentSoftBrush", "#332D83F6")
+                : GetAppBrush("CardBrush", "#172230");
+            card.BorderBrush = isActive
+                ? GetAppBrush("AccentBrush", "#7569E8")
+                : GetAppBrush("OutlineBrush", "#29384A");
         };
         if (recording is not null && recording.Events.Count > 0)
         {
@@ -210,7 +232,7 @@ public partial class MacroWindow : Window
                 ?? throw new InvalidDataException("This file does not contain a valid macro.");
             Recording.RecordedEvents.Clear();
             Recording.RecordedEvents.AddRange(loaded.Events);
-            MainWindow.Instance.SetActiveMacro(loaded.Name, loaded.Events.Count);
+            MainWindow.Instance.SetActiveMacro(loaded.Name, filePath, loaded.Events.Count);
             AppLogger.Info("Macros", $"Loaded '{displayName}' as the active macro ({loaded.Events.Count:N0} events).");
             Close();
         }

@@ -312,6 +312,7 @@ public partial class MainWindow : Window
                 return;
 
             appendRecordingActive = false;
+            SaveAndLoadEvents.Instance.ActiveRecordingPath = null;
             appendUndoSnapshot = null;
             UndoAppendButton.IsVisible = false;
             RecordButton.Background = ThemeManager.Instance.GetBrush("DangerBrush", "#FFE35E71");
@@ -493,12 +494,13 @@ public partial class MainWindow : Window
         }
     }
 
-    public void SetActiveMacro(string name, int eventCount)
+    public void SetActiveMacro(string name, string filePath, int eventCount)
     {
         if (Recording.isRecording || Playback.playbackStarted || eventCount <= 0)
             return;
 
         appendUndoSnapshot = null;
+        SaveAndLoadEvents.Instance.ActiveRecordingPath = Path.GetFullPath(filePath);
         UndoAppendButton.IsVisible = false;
         StatusTextBlock.Text = $"Loaded macro: {name}.";
         MainWindow.displayTimer.Reset();
