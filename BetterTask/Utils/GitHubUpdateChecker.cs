@@ -20,7 +20,10 @@ public sealed record UpdateCheckResult(
     Version? LatestVersion = null,
     string? ReleaseUrl = null,
     string? ReleaseNotes = null,
-    string? ErrorMessage = null);
+    string? ErrorMessage = null,
+    UpdateAsset? Asset = null);
+
+public sealed record UpdateAsset(string Name, string DownloadUrl, string? Digest, long Size);
 
 public static class GitHubUpdateChecker
 {
@@ -74,7 +77,10 @@ public static class GitHubUpdateChecker
                 CurrentVersion,
                 latestVersion,
                 releaseUri.AbsoluteUri,
-                release.Body);
+                release.Body,
+                Asset: release.Assets.FirstOrDefault(a =>
+                    a.Name.Equals($"BetterTask-v{latestVersion}-win-{System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()}.zip", StringComparison.OrdinalIgnoreCase))
+                    is { } asset ? new UpdateAsset(asset.Name, asset.DownloadUrl, asset.Digest, asset.Size) : null);
         }
         catch (Exception ex) when (ex is HttpRequestException
             or TaskCanceledException
@@ -126,8 +132,19 @@ public static class GitHubUpdateChecker
         return true;
     }
 
+    private sealed class GitHubAsset
+    {
+        [JsonPropertyName("name")] public string Name { get; set; } = "";
+        [JsonPropertyName("browser_download_url")] public string DownloadUrl { get; set; } = "";
+        [JsonPropertyName("digest")] public string? Digest { get; set; }
+        [JsonPropertyName("size")] public long Size { get; set; }
+    }
+
     private sealed class GitHubRelease
     {
+        [JsonPropertyName("assets")]
+        public List<GitHubAsset> Assets { get; set; } = new();
+
         [JsonPropertyName("tag_name")]
         public string? TagName { get; set; }
 

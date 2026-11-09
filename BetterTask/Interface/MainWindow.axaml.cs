@@ -63,16 +63,63 @@ public partial class MainWindow : Window
         await ShowUpdateAvailableDialogAsync(result);
     }
 
-    private async Task ShowUpdateAvailableDialogAsync(UpdateCheckResult result)
+    public async Task ShowUpdateAvailableDialogAsync(UpdateCheckResult result)
     {
         var dialog = new Window
         {
             Title = "BetterTask update available",
+            Topmost = Topmost,
             Width = 500,
-            Height = 420,
+            Height = 490,
             CanResize = false,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Background = ThemeManager.Instance.GetBrush("AppBackgroundBrush", "#FF171821")
+        };
+
+        bool installing = false;
+        dialog.Closing += (_, e) => { if (installing) e.Cancel = true; };
+        var updateStatus = new TextBlock
+        {
+            Text = AutoUpdater.CanInstall(result)
+                ? "The update will download, install, and restart BetterTask. Save your recording first."
+                : "Automatic installation is unavailable for this build. Use the GitHub download below.",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            Foreground = ThemeManager.Instance.GetBrush("TextPrimaryBrush", "#FFFFFFFF"),
+            FontSize = 12
+        };
+        var updateButton = new Button
+        {
+            Content = "Update and restart",
+            Height = 38,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            IsEnabled = AutoUpdater.CanInstall(result)
+        };
+        updateButton.Click += async (_, _) =>
+        {
+            if (Recording.isRecording || Playback.playbackStarted)
+            {
+                updateStatus.Text = "Stop recording or playback before updating.";
+                return;
+            }
+            installing = true;
+            updateButton.IsEnabled = false;
+            try
+            {
+                await AutoUpdater.PrepareAndLaunchAsync(result,
+                    new Progress<string>(message => updateStatus.Text = message));
+                if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    installing = false;
+                    desktop.Shutdown();
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error("Updates", "Could not install the update.", ex);
+                updateStatus.Text = $"Update failed: {ex.Message} You can retry or download from GitHub.";
+                updateButton.IsEnabled = true;
+            }
+            finally { installing = false; }
         };
 
         var openReleaseButton = new Button
@@ -86,6 +133,7 @@ public partial class MainWindow : Window
         };
         openReleaseButton.Click += (_, _) =>
         {
+            if (installing) return;
             try
             {
                 if (result.ReleaseUrl is not null)
@@ -109,7 +157,7 @@ public partial class MainWindow : Window
                 ? laterTheme as ControlTheme
                 : null
         };
-        laterButton.Click += (_, _) => dialog.Close();
+        laterButton.Click += (_, _) => { if (!installing) dialog.Close(); };
 
         var releaseNotes = new TextBlock
         {
@@ -170,6 +218,8 @@ public partial class MainWindow : Window
                     FontSize = 13
                 },
                 releaseNotesPanel,
+                updateStatus,
+                updateButton,
                 buttons
             }
         };
