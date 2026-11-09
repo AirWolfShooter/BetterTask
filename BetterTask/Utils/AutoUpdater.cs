@@ -10,13 +10,14 @@ public static class AutoUpdater
     private static int updating;
     public static bool CanInstall(UpdateCheckResult result) => result.Status == UpdateCheckStatus.UpdateAvailable
         && OperatingSystem.IsWindows()
-        && result.Asset is not null
-        && string.Equals(Path.GetFileName(Environment.ProcessPath), "BetterTask.exe", StringComparison.OrdinalIgnoreCase);
+        && result.Asset is { Name: var name }
+        && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(Path.GetExtension(Environment.ProcessPath), ".exe", StringComparison.OrdinalIgnoreCase);
 
     public static async Task PrepareAndLaunchAsync(UpdateCheckResult result, IProgress<string> progress)
     {
         if (!CanInstall(result))
-            throw new InvalidOperationException("Automatic updates require a published Windows build and a matching release ZIP.");
+            throw new InvalidOperationException("Automatic updates require a published Windows executable.");
         if (Interlocked.Exchange(ref updating, 1) != 0)
             throw new InvalidOperationException("An update is already in progress.");
         try
@@ -33,7 +34,8 @@ public static class AutoUpdater
             File.Delete(probe);
             string workspace = Path.Combine(Path.GetTempPath(), "BetterTask-Updates", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(workspace);
-            string downloadPath = Path.Combine(workspace, "BetterTask.exe");
+            string executableName = Path.GetFileName(Environment.ProcessPath!);
+            string downloadPath = Path.Combine(workspace, "update.exe");
             using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
             client.DefaultRequestHeaders.UserAgent.ParseAdd($"BetterTask/{GitHubUpdateChecker.CurrentVersion}");
             progress.Report("Downloading update...");
@@ -56,9 +58,9 @@ public static class AutoUpdater
             progress.Report("Preparing update...");
             string staged = Path.Combine(workspace, "staged");
             Directory.CreateDirectory(staged);
-            File.Copy(downloadPath, Path.Combine(staged, "BetterTask.exe"));
-            if (!File.Exists(Path.Combine(staged, "BetterTask.exe")))
-                throw new InvalidDataException("The release ZIP does not contain BetterTask.exe at its root.");
+            File.Copy(downloadPath, Path.Combine(staged, executableName));
+            if (!File.Exists(Path.Combine(staged, executableName)))
+                throw new InvalidDataException("The release did not contain a valid BetterTask executable.");
             // Reject links in the destination rather than writing outside the installation.
             var files = Directory.GetFiles(staged, "*", SearchOption.AllDirectories)
                 .Select(file => Path.GetRelativePath(staged, file)).ToArray();
@@ -75,7 +77,7 @@ public static class AutoUpdater
             string manifest = Path.Combine(workspace, "manifest.json");
             await File.WriteAllTextAsync(manifest, JsonSerializer.Serialize(new
             {
-                ProcessId = Environment.ProcessId, Target = target, Staged = staged,
+                ProcessId = Environment.ProcessId, ProcessName = executableName, Target = target, Staged = staged,
                 Backup = Path.Combine(workspace, "backup"), Files = files,
                 Executable = Environment.ProcessPath, Log = Path.Combine(workspace, "update-error.txt")
             }));
@@ -102,8 +104,8 @@ public static class AutoUpdater
         function Wait-UntilExecutableIsFree {
             $deadline = [DateTime]::UtcNow.AddSeconds(120)
             do {
-                $running = Get-CimInstance Win32_Process -Filter "Name='BetterTask.exe'" -ErrorAction SilentlyContinue |
-                    Where-Object { $_.ExecutablePath -and [string]::Equals([IO.Path]::GetFullPath($_.ExecutablePath), [IO.Path]::GetFullPath($m.Executable), [StringComparison]::OrdinalIgnoreCase) }
+                $running = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -ieq $m.ProcessName -and $_.ExecutablePath -and [string]::Equals([IO.Path]::GetFullPath($_.ExecutablePath), [IO.Path]::GetFullPath($m.Executable), [StringComparison]::OrdinalIgnoreCase) }
                 if (!$running) {
                     $probe = $null
                     try {
@@ -118,7 +120,7 @@ public static class AutoUpdater
                     Start-Sleep -Milliseconds 400
                 }
             } while ([DateTime]::UtcNow -lt $deadline)
-            throw 'BetterTask.exe is still in use. Close every BetterTask window and retry the update.'
+            throw "$($m.ProcessName) is still in use. Close every BetterTask window and retry the update."
         }
         function Copy-WithRetry([string]$Source, [string]$Destination) {
             $lastError = $null
