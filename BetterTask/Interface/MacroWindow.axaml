@@ -1,7 +1,7 @@
 <Window x:Class="BetterTask.Interface.MacroWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Macro Library" Height="610" Width="850" MinHeight="460" MinWidth="680"
+        Title="Macro Library" Icon="/Assets/BetterTask.ico" Height="610" Width="850" MinHeight="460" MinWidth="680"
         Background="{DynamicResource AppBackgroundBrush}" CanResize="True"
         WindowStartupLocation="CenterOwner">
     <Grid>
