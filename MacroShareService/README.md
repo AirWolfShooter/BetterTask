@@ -41,10 +41,11 @@ The app defaults to `https://bettertask.onrender.com/`. You can change or clear 
 ## Safety and data behavior
 
 - The API accepts only bounded macro JSON (1 MB and 10,000 events); it does not accept scripts or execute macro content.
-- Sharing codes contain 60 random bits. Only a SHA-256 hash of each code is stored; codes are returned once at creation.
-- Shares expire after 30 days. A MongoDB TTL index removes expired share documents after their expiry time; TTL cleanup can be delayed by MongoDB.
+- Re-sharing identical macro data reuses its existing code and expiry instead of creating another share. If the share has expired, re-sharing refreshes its expiry to 30 days from that request.
+- New codes are generated from a server-keyed HMAC of the macro data; only the SHA-256 hash of a code and a fingerprint of the macro are stored. The HMAC key is derived from the server-only MongoDB URI, so keep that URI stable to keep repeat shares deduplicated.
+- Shares expire exactly 30 days after creation (or a re-share after expiry). The app displays the expiry returned by the API in the user's local time. A MongoDB TTL index removes expired share documents after their expiry time; TTL cleanup can be delayed by MongoDB, while downloads are rejected as soon as the expiry passes.
 - A sharing code is a bearer secret: anyone who has it can download the macro until expiry. Share it only with people you trust.
-- API requests are rate-limited to 20 per IP per minute. The API has no list, update, delete, or database administration endpoint.
+- Share creation is limited to 6 requests per IP per minute; downloads are limited to 60 per IP per minute. The API has no list, update, delete, or database administration endpoint.
 - On startup it creates only the two indexes on its own `macros` collection. The service contains no database/collection drop operation.
 - Keep server logs free of connection strings and avoid logging macro bodies or sharing codes.
 

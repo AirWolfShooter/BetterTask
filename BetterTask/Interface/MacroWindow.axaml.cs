@@ -1,6 +1,7 @@
 using System.IO;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -342,8 +343,8 @@ public partial class MacroWindow : Window
                     $"Upload \"{recording.Name}\" ({recording.Events.Count:N0} recorded keyboard/mouse inputs)? Anyone with the code can download it until it expires.",
                     "Share"))
                 return;
-            string code = await MacroShareClient.ShareAsync(recording);
-            await ShowMessageAsync("Macro sharing code", $"Share this code with the other person:\n\n{code}\n\nIt expires in 30 days.");
+            MacroShareClient.MacroShareLink share = await MacroShareClient.ShareAsync(recording);
+            await ShowShareCodeAsync(share);
         }
         catch (Exception ex)
         {
@@ -393,19 +394,63 @@ public partial class MacroWindow : Window
         return await dialog.ShowDialog<string?>(this);
     }
 
-    private async Task ShowMessageAsync(string title, string message)
+    private async Task ShowShareCodeAsync(MacroShareClient.MacroShareLink share)
     {
         var dialog = new Window
         {
-            Title = title, Width = 400, Height = 220, CanResize = false, Topmost = true,
+            Title = "Macro sharing code", Width = 440, Height = 280, CanResize = false, Topmost = true,
             Background = GetAppBrush("SurfaceBrush", "#121A25"), WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
-        var close = CreateActionButton("Close", 90, "RoundedButtonStyle");
+        var status = new TextBlock
+        {
+            Text = share.Reused ? "This macro already had a code; no duplicate share was created." : "Anyone with the code can download this macro.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = GetAppBrush("TextSecondaryBrush", "#AAB5C3"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center
+        };
+        var codeText = new TextBlock
+        {
+            Text = share.Code,
+            FontSize = 25,
+            FontWeight = FontWeight.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = GetAppBrush("TextPrimaryBrush", "#F1F4F9")
+        };
+        var expiresText = new TextBlock
+        {
+            Text = $"Expires {share.ExpiresAt.ToLocalTime():MMMM d, yyyy 'at' h:mm tt} (your local time)",
+            TextWrapping = TextWrapping.Wrap,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            Foreground = GetAppBrush("TextSecondaryBrush", "#AAB5C3")
+        };
+        var copy = CreateActionButton("Copy to clipboard", 155, "RoundedButtonStyle");
+        copy.Click += async (_, _) =>
+        {
+            try
+            {
+                IClipboard? clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+                if (clipboard is null)
+                    throw new InvalidOperationException("Clipboard is unavailable.");
+                await clipboard.SetTextAsync(share.Code);
+                status.Text = "Code copied to clipboard.";
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Warning("Macro sharing", "Could not copy the share code to the clipboard.", ex);
+                status.Text = "Could not copy the code. You can select and copy it manually.";
+            }
+        };
+        var close = CreateActionButton("Close", 90, "SecondaryButtonStyle");
         close.Click += (_, _) => dialog.Close();
         dialog.Content = new StackPanel { Margin = new Thickness(16), Spacing = 14, Children =
         {
-            new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, FontSize = 16,
-                Foreground = GetAppBrush("TextPrimaryBrush", "#F1F4F9") }, close
+            status,
+            codeText,
+            expiresText,
+            new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
+                Spacing = 8, Children = { copy, close } }
         }};
         await dialog.ShowDialog(this);
     }

@@ -12,7 +12,7 @@ internal static class MacroShareClient
     private const int MaxPayloadBytes = 1_000_000;
     private const int MaxEvents = 10_000;
 
-    public static async Task<string> ShareAsync(RecordingFile recording, CancellationToken cancellationToken = default)
+    public static async Task<MacroShareLink> ShareAsync(RecordingFile recording, CancellationToken cancellationToken = default)
     {
         Uri baseUri = GetBaseUri();
         Validate(recording);
@@ -25,7 +25,9 @@ internal static class MacroShareClient
         using HttpResponseMessage response = await Http.PostAsync(new Uri(baseUri, "api/macros"), content, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
         ShareCreated? result = await response.Content.ReadFromJsonAsync<ShareCreated>(JsonOptions, cancellationToken);
-        return result?.Code ?? throw new InvalidDataException("The sharing service returned an invalid response.");
+        if (result is null || string.IsNullOrWhiteSpace(result.Code))
+            throw new InvalidDataException("The sharing service returned an invalid response.");
+        return new MacroShareLink(result.Code, result.ExpiresAt, result.Reused);
     }
 
     public static async Task<RecordingFile> DownloadAsync(string code, CancellationToken cancellationToken = default)
@@ -88,5 +90,12 @@ internal static class MacroShareClient
         throw new HttpRequestException(message, null, response.StatusCode);
     }
 
-    private sealed class ShareCreated { public string Code { get; set; } = string.Empty; }
+    internal sealed record MacroShareLink(string Code, DateTimeOffset ExpiresAt, bool Reused);
+
+    private sealed class ShareCreated
+    {
+        public string Code { get; set; } = string.Empty;
+        public DateTimeOffset ExpiresAt { get; set; }
+        public bool Reused { get; set; }
+    }
 }

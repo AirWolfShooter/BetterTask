@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using MongoDB.Bson;
@@ -18,11 +19,18 @@ builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.P
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy("share", http => RateLimitPartition.GetFixedWindowLimiter(
+    options.AddPolicy("share-create", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
+            PermitLimit = 6, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+    options.AddPolicy("share-download", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
             AutoReplenishment = true
         }));
 });
@@ -55,29 +63,65 @@ app.MapPost("/api/macros", async (MacroDto macro, HttpContext context) =>
     if (!IsValid(macro, out string error))
         return Results.BadRequest(new { error });
 
-    string code;
-    string hash;
-    for (int attempt = 0; ; attempt++)
+    string fingerprint = Fingerprint(macro);
+    string code = CreateCode(fingerprint, mongoUri);
+    string codeHash = HashCode(code);
+    DateTime now = DateTime.UtcNow;
+
+    ShareDocument? existing = await collection.Find(x => x.CodeHash == codeHash)
+        .FirstOrDefaultAsync(context.RequestAborted);
+    if (existing is not null)
     {
-        code = CreateCode();
-        hash = HashCode(code);
-        try
+        if (existing.Fingerprint != fingerprint)
+            return Results.Problem("A share-code collision occurred. Please retry.", statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        if (existing.ExpiresAt <= now)
         {
-            DateTime expiresAt = DateTime.UtcNow.AddDays(30);
-            await collection.InsertOneAsync(new ShareDocument
-            {
-                Id = ObjectId.GenerateNewId(), CodeHash = hash, Macro = macro,
-                CreatedAt = DateTime.UtcNow, ExpiresAt = expiresAt
-            }, cancellationToken: context.RequestAborted);
-            context.Response.Headers.CacheControl = "no-store";
-            return Results.Created($"/api/macros/{code}", new { code = FormatCode(code), expiresAt });
+            DateTime renewedExpiry = now.AddDays(30);
+            var filter = Builders<ShareDocument>.Filter.Eq(x => x.CodeHash, codeHash)
+                & Builders<ShareDocument>.Filter.Eq(x => x.Fingerprint, fingerprint)
+                & Builders<ShareDocument>.Filter.Lte(x => x.ExpiresAt, now);
+            var update = Builders<ShareDocument>.Update
+                .Set(x => x.CreatedAt, now)
+                .Set(x => x.ExpiresAt, renewedExpiry)
+                .Set(x => x.Macro, macro);
+            existing = await collection.FindOneAndUpdateAsync(filter, update,
+                new FindOneAndUpdateOptions<ShareDocument> { ReturnDocument = ReturnDocument.After },
+                context.RequestAborted);
+            existing ??= await collection.Find(x => x.CodeHash == codeHash)
+                .FirstOrDefaultAsync(context.RequestAborted);
         }
-        catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey && attempt < 3)
-        {
-            // Retry only an astronomically unlikely code collision.
-        }
+
+        if (existing is not null && existing.ExpiresAt > DateTime.UtcNow)
+            return ExistingShareResponse(context, code, existing.ExpiresAt);
     }
-}).RequireRateLimiting("share");
+
+    DateTime createdAt = DateTime.UtcNow;
+    DateTime expiresAt = createdAt.AddDays(30);
+    try
+    {
+        await collection.InsertOneAsync(new ShareDocument
+        {
+            Id = ObjectId.GenerateNewId(), CodeHash = codeHash, Fingerprint = fingerprint,
+            Macro = macro, CreatedAt = createdAt, ExpiresAt = expiresAt
+        }, cancellationToken: context.RequestAborted);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Created($"/api/macros/{code}", new
+        {
+            code = FormatCode(code), expiresAt, reused = false
+        });
+    }
+    catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+    {
+        // Concurrent requests for identical macro data converge on the same share code.
+        ShareDocument? raced = await collection.Find(x => x.CodeHash == codeHash)
+            .FirstOrDefaultAsync(context.RequestAborted);
+        if (raced is not null && raced.Fingerprint == fingerprint && raced.ExpiresAt > DateTime.UtcNow)
+            return ExistingShareResponse(context, code, raced.ExpiresAt);
+
+        return Results.Problem("Could not create the share. Please retry.", statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}).RequireRateLimiting("share-create");
 
 app.MapGet("/api/macros/{code}", async (string code, HttpContext context) =>
 {
@@ -91,15 +135,25 @@ app.MapGet("/api/macros/{code}", async (string code, HttpContext context) =>
     if (saved is null || saved.ExpiresAt <= DateTime.UtcNow) return Results.NotFound();
     context.Response.Headers.CacheControl = "no-store";
     return Results.Ok(saved.Macro);
-}).RequireRateLimiting("share");
+}).RequireRateLimiting("share-download");
 
 app.Run();
 
-static string CreateCode()
+static IResult ExistingShareResponse(HttpContext context, string code, DateTime expiresAt)
 {
-    byte[] random = RandomNumberGenerator.GetBytes(12);
-    return string.Concat(random.Select(value => alphabet[value & 31]));
+    context.Response.Headers.CacheControl = "no-store";
+    return Results.Ok(new { code = FormatCode(code), expiresAt, reused = true });
 }
+
+static string CreateCode(string fingerprint, string keyMaterial)
+{
+    byte[] key = SHA256.HashData(Encoding.UTF8.GetBytes(keyMaterial + "|BetterTask.ShareCode.v1"));
+    byte[] digest = HMACSHA256.HashData(key, Encoding.UTF8.GetBytes(fingerprint));
+    return string.Concat(digest.Take(12).Select(value => alphabet[value & 31]));
+}
+
+static string Fingerprint(MacroDto macro) =>
+    Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(macro)));
 
 static string FormatCode(string code) => $"{code[..4]}-{code[4..8]}-{code[8..]}";
 static string HashCode(string code) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code.ToUpperInvariant())));
@@ -127,6 +181,7 @@ sealed class ShareDocument
 {
     [BsonId] public ObjectId Id { get; set; }
     public string CodeHash { get; set; } = string.Empty;
+    public string Fingerprint { get; set; } = string.Empty;
     public MacroDto Macro { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
