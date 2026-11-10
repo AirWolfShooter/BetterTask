@@ -155,7 +155,7 @@ public partial class MacroWindow : Window
         shareButton.Click += async (_, _) =>
         {
             if (recording is not null)
-                await ShareMacroAsync(recording);
+                await ShareMacroAsync(recording, shareButton);
         };
 
         var deleteButton = CreateActionButton("Delete", 72, "DangerButtonStyle");
@@ -335,15 +335,23 @@ public partial class MacroWindow : Window
         }
     }
 
-    private async Task ShareMacroAsync(RecordingFile recording)
+    private async Task ShareMacroAsync(RecordingFile recording, Button shareButton)
     {
+        Window? progressDialog = null;
         try
         {
             if (!await ConfirmAsync("Share macro",
                     $"Upload \"{recording.Name}\" ({recording.Events.Count:N0} recorded keyboard/mouse inputs)? Anyone with the code can download it until it expires.",
                     "Share"))
                 return;
+
+            shareButton.IsEnabled = false;
+            shareButton.Content = "Sharing…";
+            progressDialog = CreateSharingProgressDialog();
+            progressDialog.Show(this);
             MacroShareClient.MacroShareLink share = await MacroShareClient.ShareAsync(recording);
+            progressDialog.Close();
+            progressDialog = null;
             await ShowShareCodeAsync(share);
         }
         catch (Exception ex)
@@ -351,6 +359,55 @@ public partial class MacroWindow : Window
             AppLogger.Error("Macro sharing", $"Could not share '{recording.Name}'.", ex);
             await ShowErrorAsync($"Could not share the macro: {ex.Message}");
         }
+        finally
+        {
+            if (progressDialog?.IsVisible == true)
+                progressDialog.Close();
+            shareButton.Content = "Share";
+            shareButton.IsEnabled = true;
+        }
+    }
+
+    private Window CreateSharingProgressDialog()
+    {
+        var dialog = new Window
+        {
+            Title = "Sharing macro",
+            Width = 370,
+            Height = 170,
+            CanResize = false,
+            ShowInTaskbar = false,
+            Topmost = true,
+            Background = GetAppBrush("SurfaceBrush", "#121A25"),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        dialog.Content = new StackPanel
+        {
+            Margin = new Thickness(22),
+            Spacing = 13,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Connecting to the sharing service…",
+                    FontSize = 15,
+                    FontWeight = FontWeight.SemiBold,
+                    Foreground = GetAppBrush("TextPrimaryBrush", "#F1F4F9"),
+                    HorizontalAlignment = HorizontalAlignment.Center
+                },
+                new ProgressBar { IsIndeterminate = true, Height = 6 },
+                new TextBlock
+                {
+                    Text = "If the service has been idle, its first response can take a little longer.",
+                    FontSize = 12,
+                    TextWrapping = TextWrapping.Wrap,
+                    TextAlignment = TextAlignment.Center,
+                    Foreground = GetAppBrush("TextSecondaryBrush", "#AAB5C3")
+                }
+            }
+        };
+        return dialog;
     }
 
     private async Task SaveImportedRecordingAsync(RecordingFile recording)
