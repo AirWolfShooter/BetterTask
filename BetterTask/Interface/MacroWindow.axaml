@@ -8,7 +8,7 @@
         <Image x:Name="ThemeBackgroundImage" Stretch="UniformToFill" Opacity="0.3"
                IsVisible="False" IsHitTestVisible="False" />
         <Grid Margin="22" RowDefinitions="Auto,*,Auto" RowSpacing="16">
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
             <StackPanel VerticalAlignment="Center" Spacing="4">
                 <TextBlock Text="Macro Library" FontSize="24" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" />
@@ -21,6 +21,8 @@
             <Button x:Name="ImportButton" Grid.Column="2" Content="Import macro"
                     Width="132" Height="42" Theme="{StaticResource SecondaryButtonStyle}"
                     Click="importRecordingClicked" />
+            <Button Grid.Column="3" Content="Import code" Width="112" Height="42"
+                    Theme="{StaticResource SecondaryButtonStyle}" Click="importSharedCodeClicked" />
         </Grid>
 
         <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}"

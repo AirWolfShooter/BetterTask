@@ -12,6 +12,7 @@ namespace BetterTask.Settings
         public bool? CompactMode { get; set; }
         public int CompactStyle { get; set; }
         public bool ShowAppendRecordingButton { get; set; }
+        public string MacroShareApiUrl { get; set; } = string.Empty;
         public ThemeSettings? Theme { get; set; } = new();
         public List<ThemePreset> ThemePresets { get; set; } = new();
         public Dictionary<KeybindType, KeyCode>? Hotkeys { get; set; }

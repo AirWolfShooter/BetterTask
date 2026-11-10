@@ -31,11 +31,20 @@ public partial class GeneralSettings : UserControl
         compactMode.IsChecked = SettingsManager.Instance.settings.CompactMode ?? false;
         compactLayoutStyle.SelectedIndex = SettingsManager.Instance.settings.CompactStyle;
         showAppendRecordingButton.IsChecked = SettingsManager.Instance.settings.ShowAppendRecordingButton;
+        MacroShareApiUrlBox.Text = SettingsManager.Instance.settings.MacroShareApiUrl;
         startDelay.Text = SettingsManager.Instance.settings.StartDelay?.ToString() ?? "0";
         isLoadingSettings = false;
         MainWindow.Instance.SetCompactMode(compactMode.IsChecked ?? false, persist: false);
         MainWindow.Instance.SetAppendRecordingButtonVisibility(showAppendRecordingButton.IsChecked ?? false);
         checkSettings();
+    }
+
+    private void macroShareApiUrlChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (isLoadingSettings) return;
+        SettingsManager.Instance.settings.MacroShareApiUrl = MacroShareApiUrlBox.Text?.Trim() ?? string.Empty;
+        if (SettingsManager.Instance.settings.SaveAutomatically ?? false)
+            SettingsManager.Instance.saveSettings();
     }
 
     public void stayOnTopClicked(object? sender, RoutedEventArgs e)
