@@ -8,7 +8,7 @@ namespace BetterTask.Core.Sharing;
 internal static class MacroShareClient
 {
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false })
-        { Timeout = TimeSpan.FromSeconds(20) };
+        { Timeout = TimeSpan.FromSeconds(90) };
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private const int MaxPayloadBytes = 1_000_000;
     private const int MaxEvents = 10_000;
@@ -23,7 +23,11 @@ internal static class MacroShareClient
 
         using var content = new ByteArrayContent(payload);
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-        using HttpResponseMessage response = await Http.PostAsync(new Uri(baseUri, "api/macros"), content, cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "api/macros"))
+        {
+            Content = content
+        };
+        using HttpResponseMessage response = await SendAsync(request, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
         ShareCreated? result = await response.Content.ReadFromJsonAsync<ShareCreated>(JsonOptions, cancellationToken);
         if (result is null || !IsValidCode(result.Code))
@@ -38,8 +42,11 @@ internal static class MacroShareClient
         if (!IsValidCode(normalized))
             throw new ArgumentException("Enter a valid 12- or 26-character sharing code.", nameof(code));
 
-        using HttpResponseMessage response = await Http.PostAsJsonAsync(
-            new Uri(baseUri, "api/macros/download"), new DownloadRequest(normalized), JsonOptions, cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUri, "api/macros/download"))
+        {
+            Content = JsonContent.Create(new DownloadRequest(normalized), options: JsonOptions)
+        };
+        using HttpResponseMessage response = await SendAsync(request, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
         await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var limited = new MemoryStream();
@@ -83,6 +90,19 @@ internal static class MacroShareClient
         string normalized = new(code.Where(char.IsLetterOrDigit).ToArray());
         return normalized.Length is 12 or 26
             && normalized.All(character => "0123456789ABCDEFGHJKMNPQRSTVWXYZ".Contains(char.ToUpperInvariant(character)));
+    }
+
+    private static async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        }
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException(
+                "The sharing service took too long to respond. It may be waking up after being idle; please try again.", ex);
+        }
     }
 
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
