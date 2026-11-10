@@ -7,7 +7,8 @@ namespace BetterTask.Core.Sharing;
 
 internal static class MacroShareClient
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
+    private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false })
+        { Timeout = TimeSpan.FromSeconds(20) };
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
     private const int MaxPayloadBytes = 1_000_000;
     private const int MaxEvents = 10_000;
@@ -25,7 +26,7 @@ internal static class MacroShareClient
         using HttpResponseMessage response = await Http.PostAsync(new Uri(baseUri, "api/macros"), content, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
         ShareCreated? result = await response.Content.ReadFromJsonAsync<ShareCreated>(JsonOptions, cancellationToken);
-        if (result is null || string.IsNullOrWhiteSpace(result.Code))
+        if (result is null || !IsValidCode(result.Code))
             throw new InvalidDataException("The sharing service returned an invalid response.");
         return new MacroShareLink(result.Code, result.ExpiresAt, result.Reused);
     }
@@ -34,13 +35,11 @@ internal static class MacroShareClient
     {
         Uri baseUri = GetBaseUri();
         string normalized = new string(code.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
-        if (normalized.Length != 12)
-            throw new ArgumentException("Enter a 12-character sharing code.", nameof(code));
+        if (!IsValidCode(normalized))
+            throw new ArgumentException("Enter a valid 12- or 26-character sharing code.", nameof(code));
 
-        using HttpResponseMessage response = await Http.GetAsync(
-            new Uri(baseUri, $"api/macros/{Uri.EscapeDataString(normalized)}"),
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
+        using HttpResponseMessage response = await Http.PostAsJsonAsync(
+            new Uri(baseUri, "api/macros/download"), new DownloadRequest(normalized), JsonOptions, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
         await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var limited = new MemoryStream();
@@ -78,6 +77,14 @@ internal static class MacroShareClient
             throw new InvalidDataException("The macro contains invalid event data.");
     }
 
+    private static bool IsValidCode(string? code)
+    {
+        if (code is null) return false;
+        string normalized = new(code.Where(char.IsLetterOrDigit).ToArray());
+        return normalized.Length is 12 or 26
+            && normalized.All(character => "0123456789ABCDEFGHJKMNPQRSTVWXYZ".Contains(char.ToUpperInvariant(character)));
+    }
+
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode) return;
@@ -91,6 +98,8 @@ internal static class MacroShareClient
     }
 
     internal sealed record MacroShareLink(string Code, DateTimeOffset ExpiresAt, bool Reused);
+
+    private sealed record DownloadRequest(string Code);
 
     private sealed class ShareCreated
     {

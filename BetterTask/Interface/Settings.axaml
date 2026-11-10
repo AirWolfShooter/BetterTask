@@ -46,7 +46,7 @@
         <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
                 CornerRadius="16" Padding="8">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
+            <ScrollViewer x:Name="ContentScrollViewer" VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <ContentControl x:Name="ShownContent" />
             </ScrollViewer>

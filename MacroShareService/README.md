@@ -40,12 +40,13 @@ The app defaults to `https://bettertask.onrender.com/`. You can change or clear 
 
 ## Safety and data behavior
 
-- The API accepts only bounded macro JSON (1 MB and 10,000 events); it does not accept scripts or execute macro content.
+- The API accepts only bounded macro JSON (1 MB and 10,000 events); it does not accept scripts or execute macro content. New share codes contain 26 Crockford Base32 characters (130 bits); the API still accepts old 12-character codes for older clients.
 - Re-sharing identical macro data reuses its existing code and expiry instead of creating another share. If the share has expired, re-sharing refreshes its expiry to 30 days from that request.
 - New codes are generated from a server-keyed HMAC of the macro data; only the SHA-256 hash of a code and a fingerprint of the macro are stored. The HMAC key is derived from the server-only MongoDB URI, so keep that URI stable to keep repeat shares deduplicated.
 - Shares expire exactly 30 days after creation (or a re-share after expiry). The app displays the expiry returned by the API in the user's local time. A MongoDB TTL index removes expired share documents after their expiry time; TTL cleanup can be delayed by MongoDB, while downloads are rejected as soon as the expiry passes.
 - A sharing code is a bearer secret: anyone who has it can download the macro until expiry. Share it only with people you trust.
-- Share creation is limited to 6 requests per IP per minute; downloads are limited to 60 per IP per minute. The API has no list, update, delete, or database administration endpoint.
+- Share creation is limited to 60 requests per observed IP per minute and downloads to 60; a 1,200-request per-minute service-wide ceiling remains in place when the hosting proxy shares an address across clients. The API has no list, update, delete, or database administration endpoint. New clients submit codes in POST bodies so they do not appear in request URLs; the old GET route remains temporarily for compatibility.
+- The API refuses non-local MongoDB connections unless TLS is enabled. Atlas `mongodb+srv` connection strings use TLS; for standard `mongodb://` strings, enable `tls=true`.
 - On startup it creates only the two indexes on its own `macros` collection. The service contains no database/collection drop operation.
 - Keep server logs free of connection strings and avoid logging macro bodies or sharing codes.
 

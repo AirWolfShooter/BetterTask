@@ -7,8 +7,8 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
-const int maxBodyBytes = 10_000_000;
-const int maxEvents = 100_000;
+const int maxBodyBytes = 1_000_000;
+const int maxEvents = 10_000;
 const string alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,11 +19,19 @@ builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.P
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Render sits behind a proxy, so RemoteIpAddress can be shared by users.
+    // Keep an aggregate ceiling even when the hosting proxy address is shared.
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
+        RateLimitPartition.GetFixedWindowLimiter("service", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 1200, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
+            AutoReplenishment = true
+        }));
     options.AddPolicy("share-create", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 6, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
+            PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0,
             AutoReplenishment = true
         }));
     options.AddPolicy("share-download", http => RateLimitPartition.GetFixedWindowLimiter(
@@ -40,6 +48,13 @@ string mongoUri = Environment.GetEnvironmentVariable("BETTERTASK_MONGODB_URI")
 if (!mongoUri.StartsWith("mongodb+srv://", StringComparison.OrdinalIgnoreCase)
     && !mongoUri.StartsWith("mongodb://", StringComparison.OrdinalIgnoreCase))
     throw new InvalidOperationException("BETTERTASK_MONGODB_URI must be a MongoDB connection string.");
+MongoUrl mongoUrl = new(mongoUri);
+bool localMongo = mongoUrl.Servers.Any() && mongoUrl.Servers.All(server =>
+    server.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+    || server.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+    || server.Host.Equals("::1", StringComparison.OrdinalIgnoreCase));
+if (!localMongo && mongoUrl.UseTls != true)
+    throw new InvalidOperationException("Remote MongoDB connections must use TLS. Enable tls=true in the connection string.");
 
 string databaseName = Environment.GetEnvironmentVariable("BETTERTASK_MONGODB_DATABASE") ?? "bettertask_shares";
 var mongo = new MongoClient(mongoUri);
@@ -106,10 +121,10 @@ app.MapPost("/api/macros", async (MacroDto macro, HttpContext context) =>
             Macro = macro, CreatedAt = createdAt, ExpiresAt = expiresAt
         }, cancellationToken: context.RequestAborted);
         context.Response.Headers.CacheControl = "no-store";
-        return Results.Created($"/api/macros/{code}", new
+        return Results.Json(new
         {
             code = FormatCode(code), expiresAt, reused = false
-        });
+        }, statusCode: StatusCodes.Status201Created);
     }
     catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
     {
@@ -123,12 +138,28 @@ app.MapPost("/api/macros", async (MacroDto macro, HttpContext context) =>
     }
 }).RequireRateLimiting("share-create");
 
-app.MapGet("/api/macros/{code}", async (string code, HttpContext context) =>
+app.MapPost("/api/macros/download", async (DownloadRequest request, HttpContext context) =>
 {
-    string normalized = new(code.Where(char.IsLetterOrDigit).ToArray());
-    if (normalized.Length != 12 || normalized.Any(c => !alphabet.Contains(char.ToUpperInvariant(c))))
+    context.Response.Headers.CacheControl = "no-store";
+    string? normalized = NormalizeCode(request.Code);
+    if (normalized is null)
         return Results.NotFound();
 
+    string codeHash = HashCode(normalized);
+    ShareDocument? saved = await collection.Find(x => x.CodeHash == codeHash)
+        .FirstOrDefaultAsync(context.RequestAborted);
+    if (saved is null || saved.ExpiresAt <= DateTime.UtcNow) return Results.NotFound();
+    context.Response.Headers.CacheControl = "no-store";
+    return Results.Ok(saved.Macro);
+}).RequireRateLimiting("share-download");
+
+// Compatibility endpoint for clients from releases that predate POST downloads.
+// New clients send codes in a bounded JSON body to keep them out of request paths/logs.
+app.MapGet("/api/macros/{code}", async (string code, HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "no-store";
+    string? normalized = NormalizeCode(code);
+    if (normalized is null || normalized.Length != 12) return Results.NotFound();
     string codeHash = HashCode(normalized);
     ShareDocument? saved = await collection.Find(x => x.CodeHash == codeHash)
         .FirstOrDefaultAsync(context.RequestAborted);
@@ -149,14 +180,33 @@ static string CreateCode(string fingerprint, string keyMaterial)
 {
     byte[] key = SHA256.HashData(Encoding.UTF8.GetBytes(keyMaterial + "|BetterTask.ShareCode.v1"));
     byte[] digest = HMACSHA256.HashData(key, Encoding.UTF8.GetBytes(fingerprint));
-    return string.Concat(digest.Take(12).Select(value => alphabet[value & 31]));
+    return string.Concat(Enumerable.Range(0, 26).Select(index =>
+    {
+        int value = 0;
+        for (int bit = 0; bit < 5; bit++)
+        {
+            int sourceBit = index * 5 + bit;
+            value = (value << 1) | ((digest[sourceBit / 8] >> (7 - sourceBit % 8)) & 1);
+        }
+        return alphabet[value];
+    }));
 }
 
 static string Fingerprint(MacroDto macro) =>
     Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(macro)));
 
-static string FormatCode(string code) => $"{code[..4]}-{code[4..8]}-{code[8..]}";
+static string FormatCode(string code) => code.Length == 12
+    ? $"{code[..4]}-{code[4..8]}-{code[8..]}"
+    : string.Join('-', Enumerable.Range(0, 5).Select(index => code.Substring(index * 5, 5)).Append(code[25..]));
 static string HashCode(string code) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code.ToUpperInvariant())));
+static string? NormalizeCode(string? code)
+{
+    if (string.IsNullOrWhiteSpace(code)) return null;
+    string normalized = new(code.Where(char.IsLetterOrDigit).ToArray());
+    if (normalized.Length is not (12 or 26)
+        || normalized.Any(c => !alphabet.Contains(char.ToUpperInvariant(c)))) return null;
+    return normalized.ToUpperInvariant();
+}
 
 static bool IsValid(MacroDto? macro, out string error)
 {
@@ -193,6 +243,11 @@ sealed class MacroDto
     public string Created { get; set; } = string.Empty;
     public string Version { get; set; } = "1.0";
     public List<MacroEventDto> Events { get; set; } = new();
+}
+
+sealed class DownloadRequest
+{
+    public string Code { get; set; } = string.Empty;
 }
 
 sealed class MacroEventDto

@@ -8,11 +8,13 @@ namespace BetterTask.Updates;
 
 public static class AutoUpdater
 {
+    private const long MaxUpdateBytes = 250L * 1024 * 1024;
     private static int updating;
     public static bool CanInstall(UpdateCheckResult result) => result.Status == UpdateCheckStatus.UpdateAvailable
         && OperatingSystem.IsWindows()
-        && result.Asset is { Name: var name }
-        && name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+        && result.Asset is { Name: var name, Size: > 0 and <= MaxUpdateBytes, Digest: { } digest }
+        && name.Equals($"BetterTask-v{result.LatestVersion}-win-{System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()}.exe", StringComparison.OrdinalIgnoreCase)
+        && IsSha256Digest(digest)
         && string.Equals(Path.GetExtension(Environment.ProcessPath), ".exe", StringComparison.OrdinalIgnoreCase);
 
     public static async Task PrepareAndLaunchAsync(UpdateCheckResult result, IProgress<string> progress)
@@ -24,9 +26,12 @@ public static class AutoUpdater
         try
         {
             UpdateAsset asset = result.Asset!;
+            if (asset.Size <= 0 || asset.Size > MaxUpdateBytes || !IsSha256Digest(asset.Digest))
+                throw new InvalidDataException("The release is missing a valid SHA-256 checksum or has an unsafe file size.");
             if (!Uri.TryCreate(asset.DownloadUrl, UriKind.Absolute, out var url)
                 || url.Scheme != "https" || url.Host != "github.com"
-                || !url.AbsolutePath.StartsWith("/AirWolfShooter/BetterTask/releases/download/", StringComparison.Ordinal))
+                || !url.AbsolutePath.StartsWith("/AirWolfShooter/BetterTask/releases/download/", StringComparison.Ordinal)
+                || !url.AbsolutePath.EndsWith("/" + Uri.EscapeDataString(asset.Name), StringComparison.Ordinal))
                 throw new InvalidDataException("The update download is not from the BetterTask repository.");
             string target = Path.GetDirectoryName(Environment.ProcessPath!)!;
             // Check permission before downloading or closing the application.
@@ -43,15 +48,30 @@ public static class AutoUpdater
             using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
             {
                 response.EnsureSuccessStatusCode();
+                if (response.RequestMessage?.RequestUri is not { } finalUri || finalUri.Scheme != "https"
+                    || !(finalUri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+                         || finalUri.Host.Equals("release-assets.githubusercontent.com", StringComparison.OrdinalIgnoreCase)
+                         || finalUri.Host.EndsWith(".githubusercontent.com", StringComparison.OrdinalIgnoreCase)))
+                    throw new InvalidDataException("GitHub redirected the update to an untrusted host.");
+                if (response.Content.Headers.ContentLength is long contentLength && contentLength != asset.Size)
+                    throw new InvalidDataException("The update size did not match the published asset metadata.");
                 await using var source = await response.Content.ReadAsStreamAsync();
                 await using var output = File.Create(downloadPath);
-                await source.CopyToAsync(output);
+                byte[] buffer = new byte[64 * 1024];
+                long total = 0;
+                int read;
+                while ((read = await source.ReadAsync(buffer)) > 0)
+                {
+                    total += read;
+                    if (total > asset.Size || total > MaxUpdateBytes)
+                        throw new InvalidDataException("The update exceeded its published size limit.");
+                    await output.WriteAsync(buffer.AsMemory(0, read));
+                }
             }
-            if (asset.Size <= 0 || new FileInfo(downloadPath).Length != asset.Size)
+            if (new FileInfo(downloadPath).Length != asset.Size)
                 throw new InvalidDataException("The update download is incomplete.");
-            if (asset.Digest is { Length: > 0 })
+            await using (var input = File.OpenRead(downloadPath))
             {
-                await using var input = File.OpenRead(downloadPath);
                 string actual = "sha256:" + Convert.ToHexString(await SHA256.HashDataAsync(input));
                 if (!actual.Equals(asset.Digest, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidDataException("The update checksum did not match. Your current installation was not changed.");
@@ -96,6 +116,10 @@ public static class AutoUpdater
         }
         finally { Volatile.Write(ref updating, 0); }
     }
+
+    private static bool IsSha256Digest(string? digest) => digest is { Length: 71 }
+        && digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
+        && digest.AsSpan(7).ToString().All(Uri.IsHexDigit);
 
     internal const string InstallScript = """
         param([string]$Manifest)

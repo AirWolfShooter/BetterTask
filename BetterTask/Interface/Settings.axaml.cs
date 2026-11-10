@@ -32,7 +32,7 @@ public partial class Settings : Window
         KeybindsButton.Theme = GetButtonTheme("RoundedButtonStyle");
         ThemesButton.Theme = GetButtonTheme("SecondaryButtonStyle");
         LogsButton.Theme = GetButtonTheme("SecondaryButtonStyle");
-        ShownContent.Content = keybindsSetting;
+        ShowContent(keybindsSetting);
     }
 
     private void ThemesSettingsClick(object? sender, RoutedEventArgs e)
@@ -41,7 +41,7 @@ public partial class Settings : Window
         KeybindsButton.Theme = GetButtonTheme("SecondaryButtonStyle");
         ThemesButton.Theme = GetButtonTheme("RoundedButtonStyle");
         LogsButton.Theme = GetButtonTheme("SecondaryButtonStyle");
-        ShownContent.Content = themesSettings;
+        ShowContent(themesSettings);
     }
 
     private void LogsSettingsClick(object? sender, RoutedEventArgs e)
@@ -50,7 +50,7 @@ public partial class Settings : Window
         KeybindsButton.Theme = GetButtonTheme("SecondaryButtonStyle");
         ThemesButton.Theme = GetButtonTheme("SecondaryButtonStyle");
         LogsButton.Theme = GetButtonTheme("RoundedButtonStyle");
-        ShownContent.Content = logsSettings;
+        ShowContent(logsSettings);
     }
 
     private void ShowGeneralSettings()
@@ -59,7 +59,13 @@ public partial class Settings : Window
         KeybindsButton.Theme = GetButtonTheme("SecondaryButtonStyle");
         ThemesButton.Theme = GetButtonTheme("SecondaryButtonStyle");
         LogsButton.Theme = GetButtonTheme("SecondaryButtonStyle");
-        ShownContent.Content = generalSettings;
+        ShowContent(generalSettings);
+    }
+
+    private void ShowContent(Control content)
+    {
+        ShownContent.Content = content;
+        ContentScrollViewer.Offset = Vector.Zero;
     }
 
     private static ControlTheme? GetButtonTheme(string key)
