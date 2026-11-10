@@ -2,9 +2,10 @@ using System.Text.RegularExpressions;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using BetterTask.Infrastructure;
 using BetterTask.Interface;
 using BetterTask.Interface.Managers;
-using BetterTask.Utils;
+using BetterTask.Updates;
 
 namespace BetterTask.Interface.UserControlPages;
 

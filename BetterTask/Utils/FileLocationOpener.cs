@@ -1,7 +1,6 @@
 using System.Diagnostics;
-using System.IO;
 
-namespace BetterTask.Utils;
+namespace BetterTask.Infrastructure;
 
 public static class FileLocationOpener
 {

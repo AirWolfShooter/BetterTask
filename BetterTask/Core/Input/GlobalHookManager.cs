@@ -1,8 +1,7 @@
-﻿using SharpHook;
-using SharpHook.Data;
-using BetterTask.Utils;
+﻿using BetterTask.Infrastructure;
+using SharpHook;
 
-namespace BetterTask.Core
+namespace BetterTask.Core.Input
 {
     public sealed class GlobalHookManager
     {

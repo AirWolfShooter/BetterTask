@@ -6,7 +6,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using BetterTask.Core.RecordingAndPlayback;
-using BetterTask.Utils;
+using BetterTask.Infrastructure;
+using BetterTask.Themes;
 
 namespace BetterTask.Interface;
 

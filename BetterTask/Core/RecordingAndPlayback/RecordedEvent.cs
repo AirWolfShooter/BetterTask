@@ -1,6 +1,6 @@
 ﻿using SharpHook.Data;
 
-namespace BetterTask.Utils
+namespace BetterTask.Core.RecordingAndPlayback
 {
     public record RecordedEvent
     {

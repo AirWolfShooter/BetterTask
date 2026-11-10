@@ -2,8 +2,9 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using BetterTask.Infrastructure;
 
-namespace BetterTask.Utils;
+namespace BetterTask.Updates;
 
 public static class AutoUpdater
 {

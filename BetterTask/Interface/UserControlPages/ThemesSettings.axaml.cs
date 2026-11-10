@@ -9,7 +9,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using BetterTask.Interface.Managers;
-using BetterTask.Utils;
+using BetterTask.Themes;
 
 namespace BetterTask.Interface.UserControlPages;
 

@@ -2,7 +2,9 @@ using System.IO;
 using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using BetterTask.Utils;
+using BetterTask.Infrastructure;
+using BetterTask.Settings;
+using BetterTask.Themes;
 
 namespace BetterTask.Interface.Managers;
 

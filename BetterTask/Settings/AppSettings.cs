@@ -1,10 +1,8 @@
-﻿using SharpHook.Data;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using BetterTask.Themes;
+using SharpHook.Data;
 using static BetterTask.Interface.UserControlPages.KeybindsSetting;
 
-namespace BetterTask.Utils
+namespace BetterTask.Settings
 {
     public class AppSettings
     {

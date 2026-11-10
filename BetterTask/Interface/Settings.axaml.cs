@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Styling;
 using BetterTask.Interface.UserControlPages;
-using BetterTask.Utils;
+using BetterTask.Themes;
 
 namespace BetterTask.Interface;
 

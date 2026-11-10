@@ -1,13 +1,14 @@
 using BetterTask.Interface;
 using BetterTask.Interface.Managers;
 using BetterTask.Interface.UserControlPages;
-using BetterTask.Utils;
 using SharpHook;
 using SharpHook.Data;
 using SharpHook.Providers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BetterTask.Core.Input;
+using BetterTask.Infrastructure;
 
 namespace BetterTask.Core.RecordingAndPlayback
 {

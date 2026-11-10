@@ -2,10 +2,10 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using BetterTask.Core;
+using BetterTask.Core.Input;
 using BetterTask.Core.RecordingAndPlayback;
 using BetterTask.Interface;
 using BetterTask.Interface.UserControlPages;
-using BetterTask.Utils;
 using SharpHook;
 using SharpHook.Data;
 using static BetterTask.Interface.UserControlPages.KeybindsSetting;

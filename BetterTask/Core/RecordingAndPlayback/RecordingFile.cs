@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace BetterTask.Utils
+﻿namespace BetterTask.Core.RecordingAndPlayback
 {
     public class RecordingFile
     {

@@ -1,6 +1,5 @@
 using BetterTask.Interface;
 using BetterTask.Interface.Managers;
-using BetterTask.Utils;
 using SharpHook;
 using SharpHook.Data;
 using SharpHook.Native;
@@ -10,6 +9,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using BetterTask.Infrastructure;
 
 namespace BetterTask.Core.RecordingAndPlayback
 {

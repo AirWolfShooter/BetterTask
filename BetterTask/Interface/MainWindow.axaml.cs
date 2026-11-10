@@ -5,10 +5,13 @@ using Avalonia.Interactivity;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using BetterTask.Core;
+using BetterTask.Core.Input;
 using BetterTask.Core.RecordingAndPlayback;
+using BetterTask.Infrastructure;
 using BetterTask.Interface.Managers;
 using BetterTask.Interface.UserControlPages;
-using BetterTask.Utils;
+using BetterTask.Themes;
+using BetterTask.Updates;
 
 namespace BetterTask.Interface;
 

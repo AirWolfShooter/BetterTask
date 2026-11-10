@@ -1,4 +1,4 @@
-namespace BetterTask.Utils;
+namespace BetterTask.Themes;
 
 public static class ThemePresetCatalog
 {
