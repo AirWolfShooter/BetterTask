@@ -2,7 +2,9 @@ using System.IO;
 using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using BetterTask.Utils;
+using BetterTask.Infrastructure;
+using BetterTask.Settings;
+using BetterTask.Themes;
 
 namespace BetterTask.Interface.Managers;
 
@@ -79,6 +81,8 @@ internal class SettingsManager
     private void normalizeSettings()
     {
         settings.Theme ??= new ThemeSettings();
+        if (string.IsNullOrWhiteSpace(settings.MacroShareApiUrl))
+            settings.MacroShareApiUrl = AppSettings.DefaultMacroShareApiUrl;
         settings.Theme.Normalize();
         settings.CompactStyle = Math.Clamp(settings.CompactStyle, 0, 1);
         settings.ThemePresets ??= new List<ThemePreset>();

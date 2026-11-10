@@ -3,9 +3,11 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using BetterTask.Core;
+using BetterTask.Core.Input;
+using BetterTask.Infrastructure;
 using BetterTask.Interface;
 using BetterTask.Interface.Managers;
-using BetterTask.Utils;
+using BetterTask.Themes;
 
 namespace BetterTask;
 

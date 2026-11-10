@@ -3,8 +3,9 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BetterTask.Infrastructure;
 
-namespace BetterTask.Utils;
+namespace BetterTask.Updates;
 
 public enum UpdateCheckStatus
 {

@@ -1,10 +1,9 @@
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace BetterTask.Utils;
+namespace BetterTask.Infrastructure;
 
 public static class AppLogger
 {

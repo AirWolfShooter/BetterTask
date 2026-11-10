@@ -1,12 +1,15 @@
 using System.IO;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using BetterTask.Core.RecordingAndPlayback;
-using BetterTask.Utils;
+using BetterTask.Core.Sharing;
+using BetterTask.Infrastructure;
+using BetterTask.Themes;
 
 namespace BetterTask.Interface;
 
@@ -147,12 +150,21 @@ public partial class MacroWindow : Window
             }
         };
 
+        var shareButton = CreateActionButton("Share", 72, "SecondaryButtonStyle");
+        shareButton.IsEnabled = recording is not null && recording.Events.Count > 0;
+        shareButton.Click += async (_, _) =>
+        {
+            if (recording is not null)
+                await ShareMacroAsync(recording);
+        };
+
         var deleteButton = CreateActionButton("Delete", 72, "DangerButtonStyle");
         deleteButton.Click += async (_, _) => await DeleteRecordingAsync(filePath, displayName);
 
         actionButtons.Children.Add(equipButton);
         actionButtons.Children.Add(playButton);
         actionButtons.Children.Add(exportButton);
+        actionButtons.Children.Add(shareButton);
         actionButtons.Children.Add(deleteButton);
 
         var content = new Grid
@@ -303,6 +315,146 @@ public partial class MacroWindow : Window
         }
     }
 
+    private async void importSharedCodeClicked(object? sender, RoutedEventArgs e)
+    {
+        string? code = await PromptForCodeAsync();
+        if (string.IsNullOrWhiteSpace(code)) return;
+        try
+        {
+            RecordingFile recording = await MacroShareClient.DownloadAsync(code);
+            if (!await ConfirmAsync("Import shared macro",
+                    $"Import \"{recording.Name}\" ({recording.Events.Count:N0} recorded keyboard/mouse inputs)? It will be saved locally and will not run unless you choose Play.",
+                    "Import"))
+                return;
+            await SaveImportedRecordingAsync(recording);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Macro sharing", "Could not import the shared macro.", ex);
+            await ShowErrorAsync($"Could not import the shared macro: {ex.Message}");
+        }
+    }
+
+    private async Task ShareMacroAsync(RecordingFile recording)
+    {
+        try
+        {
+            if (!await ConfirmAsync("Share macro",
+                    $"Upload \"{recording.Name}\" ({recording.Events.Count:N0} recorded keyboard/mouse inputs)? Anyone with the code can download it until it expires.",
+                    "Share"))
+                return;
+            MacroShareClient.MacroShareLink share = await MacroShareClient.ShareAsync(recording);
+            await ShowShareCodeAsync(share);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Macro sharing", $"Could not share '{recording.Name}'.", ex);
+            await ShowErrorAsync($"Could not share the macro: {ex.Message}");
+        }
+    }
+
+    private async Task SaveImportedRecordingAsync(RecordingFile recording)
+    {
+        string path = EventStore.GetRecordingPath(recording.Name);
+        bool overwrite = false;
+        if (File.Exists(path))
+        {
+            overwrite = await ConfirmAsync("Replace Macro",
+                $"A macro named \"{Path.GetFileNameWithoutExtension(path)}\" already exists. Replace it?", "Replace");
+            if (!overwrite) return;
+        }
+        EventStore.SaveRecordingToHome(recording.Name, recording.Version, recording.Events, overwrite);
+        RefreshRecordingButtons();
+    }
+
+    private async Task<string?> PromptForCodeAsync()
+    {
+        var dialog = new Window
+        {
+            Title = "Import shared macro", Width = 400, Height = 190, CanResize = false,
+            Topmost = true, Background = GetAppBrush("SurfaceBrush", "#121A25"),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        var box = new TextBox { PlaceholderText = "XXXX-XXXX-XXXX" };
+        var cancel = CreateActionButton("Cancel", 90);
+        var load = CreateActionButton("Load code", 100, "RoundedButtonStyle");
+        cancel.Click += (_, _) => dialog.Close((string?)null);
+        load.Click += (_, _) => dialog.Close(box.Text?.Trim());
+        dialog.Content = new StackPanel
+        {
+            Margin = new Thickness(16), Spacing = 14,
+            Children =
+            {
+                new TextBlock { Text = "Enter a macro sharing code.", Foreground = GetAppBrush("TextPrimaryBrush", "#F1F4F9") },
+                box,
+                new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
+                    Spacing = 8, Children = { cancel, load } }
+            }
+        };
+        return await dialog.ShowDialog<string?>(this);
+    }
+
+    private async Task ShowShareCodeAsync(MacroShareClient.MacroShareLink share)
+    {
+        var dialog = new Window
+        {
+            Title = "Macro sharing code", Width = 440, Height = 280, CanResize = false, Topmost = true,
+            Background = GetAppBrush("SurfaceBrush", "#121A25"), WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        var status = new TextBlock
+        {
+            Text = share.Reused ? "This macro already had a code; no duplicate share was created." : "Anyone with the code can download this macro.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = GetAppBrush("TextSecondaryBrush", "#AAB5C3"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center
+        };
+        var codeText = new TextBlock
+        {
+            Text = share.Code,
+            FontSize = 25,
+            FontWeight = FontWeight.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = GetAppBrush("TextPrimaryBrush", "#F1F4F9")
+        };
+        var expiresText = new TextBlock
+        {
+            Text = $"Expires {share.ExpiresAt.ToLocalTime():MMMM d, yyyy 'at' h:mm tt} (your local time)",
+            TextWrapping = TextWrapping.Wrap,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            Foreground = GetAppBrush("TextSecondaryBrush", "#AAB5C3")
+        };
+        var copy = CreateActionButton("Copy to clipboard", 155, "RoundedButtonStyle");
+        copy.Click += async (_, _) =>
+        {
+            try
+            {
+                IClipboard? clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+                if (clipboard is null)
+                    throw new InvalidOperationException("Clipboard is unavailable.");
+                await clipboard.SetTextAsync(share.Code);
+                status.Text = "Code copied to clipboard.";
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Warning("Macro sharing", "Could not copy the share code to the clipboard.", ex);
+                status.Text = "Could not copy the code. You can select and copy it manually.";
+            }
+        };
+        var close = CreateActionButton("Close", 90, "SecondaryButtonStyle");
+        close.Click += (_, _) => dialog.Close();
+        dialog.Content = new StackPanel { Margin = new Thickness(16), Spacing = 14, Children =
+        {
+            status,
+            codeText,
+            expiresText,
+            new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
+                Spacing = 8, Children = { copy, close } }
+        }};
+        await dialog.ShowDialog(this);
+    }
+
     private async void exportCurrentRecordingClicked(object? sender, RoutedEventArgs e)
     {
         if (Recording.isRecording || Playback.playbackStarted)
@@ -417,7 +569,7 @@ public partial class MacroWindow : Window
 
         var nameBox = new TextBox
         {
-            Watermark = "Macro name",
+            PlaceholderText = "Macro name",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = GetAppBrush("CardBrush", "#172230"),
             Foreground = GetAppBrush("TextPrimaryBrush", "#F1F4F9"),

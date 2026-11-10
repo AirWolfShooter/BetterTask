@@ -1,6 +1,6 @@
 # Exercises the actual installer script in isolated folders. Process launches are stubbed.
 $ErrorActionPreference = 'Stop'
-$source = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../BetterTask/Utils/AutoUpdater.cs') -Raw
+$source = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../BetterTask/Updates/AutoUpdater.cs') -Raw
 $match = [regex]::Match($source, '(?s)internal const string InstallScript = """\r?\n(.*?)\r?\n        """;')
 if (!$match.Success) { throw 'Installer script not found' }
 $script = [regex]::Replace($match.Groups[1].Value, '(?m)^        ', '')

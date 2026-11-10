@@ -119,6 +119,20 @@
             </Grid>
         </Border>
 
+        <Border Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1"
+                CornerRadius="13" Padding="16">
+            <StackPanel Spacing="9">
+                <TextBlock Text="Macro sharing service" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Text="HTTPS address of the BetterTask macro sharing API. This defaults to the official sharing service."
+                           FontSize="12" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                <TextBox x:Name="MacroShareApiUrlBox" PlaceholderText="https://macros.example.com"
+                         TextChanged="macroShareApiUrlChanged" />
+            </StackPanel>
+        </Border>
+
         <StackPanel Spacing="10">
             <StackPanel Spacing="3">
                 <TextBlock Text="Settings files" FontSize="15" FontWeight="SemiBold"

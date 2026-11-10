@@ -2,8 +2,9 @@
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using BetterTask.Core;
+using BetterTask.Core.Input;
+using BetterTask.Infrastructure;
 using BetterTask.Interface.Managers;
-using BetterTask.Utils;
 using SharpHook;
 using SharpHook.Data;
 

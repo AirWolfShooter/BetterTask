@@ -362,3 +362,10 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /BetterTask/Notes.txt
+
+# Local secrets and development configuration
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+secrets.json

@@ -1,14 +1,15 @@
 using System.Diagnostics;
-using System.IO;
 using AnimatedImage.Avalonia;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
+using BetterTask.Infrastructure;
 using BetterTask.Interface;
 using BetterTask.Interface.Managers;
+using BetterTask.Settings;
 
-namespace BetterTask.Utils;
+namespace BetterTask.Themes;
 
 public sealed class ThemeManager
 {

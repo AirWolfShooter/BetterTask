@@ -2,9 +2,10 @@ using System.Text.RegularExpressions;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using BetterTask.Infrastructure;
 using BetterTask.Interface;
 using BetterTask.Interface.Managers;
-using BetterTask.Utils;
+using BetterTask.Updates;
 
 namespace BetterTask.Interface.UserControlPages;
 
@@ -30,11 +31,20 @@ public partial class GeneralSettings : UserControl
         compactMode.IsChecked = SettingsManager.Instance.settings.CompactMode ?? false;
         compactLayoutStyle.SelectedIndex = SettingsManager.Instance.settings.CompactStyle;
         showAppendRecordingButton.IsChecked = SettingsManager.Instance.settings.ShowAppendRecordingButton;
+        MacroShareApiUrlBox.Text = SettingsManager.Instance.settings.MacroShareApiUrl;
         startDelay.Text = SettingsManager.Instance.settings.StartDelay?.ToString() ?? "0";
         isLoadingSettings = false;
         MainWindow.Instance.SetCompactMode(compactMode.IsChecked ?? false, persist: false);
         MainWindow.Instance.SetAppendRecordingButtonVisibility(showAppendRecordingButton.IsChecked ?? false);
         checkSettings();
+    }
+
+    private void macroShareApiUrlChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (isLoadingSettings) return;
+        SettingsManager.Instance.settings.MacroShareApiUrl = MacroShareApiUrlBox.Text?.Trim() ?? string.Empty;
+        if (SettingsManager.Instance.settings.SaveAutomatically ?? false)
+            SettingsManager.Instance.saveSettings();
     }
 
     public void stayOnTopClicked(object? sender, RoutedEventArgs e)
