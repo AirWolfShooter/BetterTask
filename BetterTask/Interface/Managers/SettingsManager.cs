@@ -81,7 +81,8 @@ internal class SettingsManager
     private void normalizeSettings()
     {
         settings.Theme ??= new ThemeSettings();
-        settings.MacroShareApiUrl ??= string.Empty;
+        if (string.IsNullOrWhiteSpace(settings.MacroShareApiUrl))
+            settings.MacroShareApiUrl = AppSettings.DefaultMacroShareApiUrl;
         settings.Theme.Normalize();
         settings.CompactStyle = Math.Clamp(settings.CompactStyle, 0, 1);
         settings.ThemePresets ??= new List<ThemePreset>();

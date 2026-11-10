@@ -125,7 +125,7 @@
             <StackPanel Spacing="9">
                 <TextBlock Text="Macro sharing service" FontSize="15" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" />
-                <TextBlock Text="Enter the HTTPS address of your BetterTask sharing API. Leave blank to disable online sharing."
+                <TextBlock Text="HTTPS address of the BetterTask macro sharing API. This defaults to the official sharing service."
                            FontSize="12" TextWrapping="Wrap"
                            Foreground="{DynamicResource TextSecondaryBrush}" />
                 <TextBox x:Name="MacroShareApiUrlBox" PlaceholderText="https://macros.example.com"

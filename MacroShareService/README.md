@@ -36,7 +36,7 @@ Do not commit a real connection string. For local development, use a dedicated M
 
 ## Configure BetterTask
 
-Open **Settings → General → Macro sharing service** and enter the API base address, for example `https://macros.yourdomain.com/`. In the Macro Library, select **Share** on a saved macro and send the resulting code to someone. They can choose **Import code** and enter it. Imported macros are saved locally and must be explicitly played or set active.
+The app defaults to `https://bettertask.onrender.com/`. You can change or clear this under **Settings → General → Macro sharing service**. In the Macro Library, select **Share** on a saved macro and send the resulting code to someone. They can choose **Import code** and enter it. Imported macros are saved locally and must be explicitly played or set active.
 
 ## Safety and data behavior
 
