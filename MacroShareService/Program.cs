@@ -7,8 +7,8 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 
-const int maxBodyBytes = 1_000_000;
-const int maxEvents = 10_000;
+const int maxBodyBytes = 10_000_000;
+const int maxEvents = 100_000;
 const string alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
 var builder = WebApplication.CreateBuilder(args);
