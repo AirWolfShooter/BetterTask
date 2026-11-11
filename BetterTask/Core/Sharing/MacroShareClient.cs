@@ -10,8 +10,8 @@ internal static class MacroShareClient
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false })
         { Timeout = TimeSpan.FromSeconds(90) };
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
-    private const int MaxPayloadBytes = 1_000_000;
-    private const int MaxEvents = 10_000;
+    private const int MaxPayloadBytes = 10_000_000;
+    private const int MaxEvents = 100_000;
 
     public static async Task<MacroShareLink> ShareAsync(RecordingFile recording, CancellationToken cancellationToken = default)
     {
