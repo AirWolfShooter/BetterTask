@@ -234,7 +234,7 @@ public partial class MainWindow : Window
     public void UpdateTimer(object? sender, EventArgs e)
     {
         TimeSpan time = displayTimer.Elapsed;
-        Timer.Text = $"{time.Minutes:D2}:{time.Seconds:D2}";
+        Timer.Text = $"{(int)time.TotalHours}:{time.Minutes:D2}:{time.Seconds:D2}";
     }
 
     public void resetTimer()
